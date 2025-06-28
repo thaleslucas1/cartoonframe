@@ -31,6 +31,10 @@ public class ChallengeController {
             @AuthenticationPrincipal User user,
             @RequestHeader(value = "X-Session-ID", required = false) String sessionId
     ) {
+        System.out.println("[CHALLENGE] Requisição do desafio diário recebida.");
+        System.out.println("[CHALLENGE] Usuário: " + (user != null ? user.getEmail() : "anônimo"));
+        System.out.println("[CHALLENGE] Sessão: " + sessionId);
+
         return ResponseEntity.ok(challengeService.getDailyChallenge(user, sessionId));
     }
 
@@ -40,6 +44,10 @@ public class ChallengeController {
             @AuthenticationPrincipal User user,
             @RequestHeader(value = "X-Session-ID", required = false) String sessionId
     ) {
+        System.out.println("[CHALLENGE] Tentativa recebida.");
+        System.out.println("[CHALLENGE] Usuário: " + (user != null ? user.getEmail() : "anônimo"));
+        System.out.println("[CHALLENGE] Sessão: " + sessionId);
+
         try {
             AttemptResultDTO result = challengeService.processChallenge(user, sessionId, guessDTO);
             return ResponseEntity.ok(result);
@@ -63,5 +71,4 @@ public class ChallengeController {
         return ResponseEntity.ok().headers(headers).body(bytes);
     }
 
-    ///teste
 }
