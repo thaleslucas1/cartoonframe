@@ -145,7 +145,9 @@ function displayLoginButton() {
 
 function clearUserSession() {
     localStorage.removeItem('jwtToken');
+    localStorage.removeItem('sessionId');
     userToken = null;
+    sessionId = null;
     loggedInUser = null;
     displayLoginButton();
 }
@@ -162,8 +164,13 @@ async function login(identifier, password) {
         if (response.ok) {
             localStorage.setItem('jwtToken', data.token);
             userToken = data.token;
-            localStorage.removeItem('sessionId'); // Remove session ID on login
-            sessionId = null;
+            if (data.sessionId) {
+                localStorage.setItem('sessionId', data.sessionId);
+                sessionId = data.sessionId;
+            } else {
+                localStorage.removeItem('sessionId');
+                sessionId = null;
+            }
             await checkUserLoginStatus();
             await fetchDailyChallenge();
             closeModal();
@@ -189,8 +196,13 @@ async function register(name, nickname, email, password) {
         if (response.ok) {
             localStorage.setItem('jwtToken', data.token);
             userToken = data.token;
-            localStorage.removeItem('sessionId'); // Remove session ID on register
-            sessionId = null;
+            if (data.sessionId) {
+                localStorage.setItem('sessionId', data.sessionId);
+                sessionId = data.sessionId;
+            } else {
+                localStorage.removeItem('sessionId');
+                sessionId = null;
+            }
             await checkUserLoginStatus();
             await fetchDailyChallenge();
             closeModal();
@@ -393,9 +405,9 @@ async function fetchDailyChallenge() {
 
         challengeDateElement.textContent = `Desafio de ${formatDateWithoutTimezone(currentChallenge.date)}`;
 
-        const imageUrl = `http://localhost:8080/image-proxy?url=${encodeURIComponent(currentChallenge.frames[0])}`;
-        console.log("[IMAGEM LOG] Definindo imagem inicial para:", imageUrl);
-        imagemElement.src = imageUrl;
+        // Imagem carregada diretamente do URL no 'frames[0]'
+        imagemElement.src = currentChallenge.frames[0];
+        console.log("[IMAGEM LOG] Definindo imagem inicial para:", imagemElement.src); // Log atualizado
         remainingGuessesElement.textContent = `Tentativas restantes: ${currentChallenge.remainingGuesses}`;
 
         const framesInitiallyShown = (5 - currentChallenge.remainingGuesses) + 1;
@@ -455,9 +467,9 @@ async function submitGuess() {
         if (result.isCorrect) {
             displayMessage(`Parabéns! Você acertou: ${result.challengeAnswer}!`, "success");
             newGuessItem.classList.add('correct-guess');
-            const imageUrl = `http://localhost:8080/image-proxy?url=${encodeURIComponent(currentChallenge.frames[currentChallenge.frames.length - 1])}`;
-            console.log("[IMAGEM LOG] Acertou! Definindo imagem final para:", imageUrl);
-            imagemElement.src = imageUrl;
+            // Imagem final carregada diretamente do URL em 'result.currentFrame'
+            imagemElement.src = result.currentFrame;
+            console.log("[IMAGEM LOG] Acertou! Definindo imagem final para:", imagemElement.src); // Log atualizado
             inputJogo.disabled = true;
             document.querySelector('.game button').disabled = true;
             console.log("[IMAGEM LOG] Renderizando TODOS os botões de frame após acerto.");
@@ -468,9 +480,9 @@ async function submitGuess() {
 
             const nextFrameIndexToShow = result.order + 1;
             const actualFrameToShow = Math.min(nextFrameIndexToShow, currentChallenge.frames.length - 1);
-            const imageUrl = `http://localhost:8080/image-proxy?url=${encodeURIComponent(currentChallenge.frames[actualFrameToShow])}`;
-            console.log(`[IMAGEM LOG] Errou. Próximo frame a ser mostrado (índice ${actualFrameToShow}):`, imageUrl);
-            imagemElement.src = imageUrl;
+            // Próxima imagem carregada diretamente do URL em 'result.currentFrame'
+            imagemElement.src = result.currentFrame;
+            console.log(`[IMAGEM LOG] Errou. Próximo frame a ser mostrado (índice ${actualFrameToShow}):`, imagemElement.src); // Log atualizado
             remainingGuessesElement.textContent = `Tentativas restantes: ${result.remainingGuesses}`;
 
             const framesToRenderButtons = (result.order + 1) + 1;
@@ -481,9 +493,9 @@ async function submitGuess() {
                 displayMessage(`Suas tentativas acabaram! O desenho era: ${result.challengeAnswer}`, "error");
                 inputJogo.disabled = true;
                 document.querySelector('.game button').disabled = true;
-                const finalImageUrl = `http://localhost:8080/image-proxy?url=${encodeURIComponent(currentChallenge.frames[currentChallenge.frames.length - 1])}`;
-                console.log("[IMAGEM LOG] Fim das tentativas. Definindo imagem final para:", finalImageUrl);
-                imagemElement.src = finalImageUrl;
+                // Última imagem carregada diretamente do URL em 'result.currentFrame'
+                imagemElement.src = result.currentFrame; // result.currentFrame já deve ser o último frame se as tentativas acabaram.
+                console.log("[IMAGEM LOG] Fim das tentativas. Definindo imagem final para:", imagemElement.src); // Log atualizado
                 console.log("[IMAGEM LOG] Renderizando TODOS os botões de frame após fim das tentativas.");
                 renderFrameButtons(currentChallenge.frames.length);
             } else {
@@ -529,9 +541,9 @@ function renderFrameButtons(numFramesToRender) {
 function showSpecificFrame(frameIndex) {
     console.log("[IMAGEM LOG] showSpecificFrame chamado com frameIndex:", frameIndex);
     if (currentChallenge && currentChallenge.frames && currentChallenge.frames[frameIndex]) {
-        const imageUrl = `http://localhost:8080/image-proxy?url=${encodeURIComponent(currentChallenge.frames[frameIndex])}`;
-        console.log("[IMAGEM LOG] Definindo imagem para o frame:", frameIndex, "URL:", imageUrl);
-        imagemElement.src = imageUrl;
+        // Imagem carregada diretamente do URL em 'currentChallenge.frames[frameIndex]'
+        imagemElement.src = currentChallenge.frames[frameIndex];
+        console.log("[IMAGEM LOG] Definindo imagem para o frame:", frameIndex, "URL:", imagemElement.src); // Log atualizado
     } else {
         console.warn("[IMAGEM LOG] Não foi possível mostrar o frame:", frameIndex, ". currentChallenge ou frames ausentes/inválidos.");
     }
