@@ -2,6 +2,8 @@ package com.cartoonframe.app.dto;
 
 import com.cartoonframe.app.model.User;
 
+import java.util.List;
+
 public class AttemptResultDTO {
     public boolean isCorrect;
     public int order;
@@ -9,4 +11,5 @@ public class AttemptResultDTO {
     public int remainingGuesses;
     public String challengeAnswer;
     public UserSummaryDTO user;
+    public List<String> frames;
 }
