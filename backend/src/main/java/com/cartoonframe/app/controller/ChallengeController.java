@@ -55,20 +55,4 @@ public class ChallengeController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
-    @GetMapping("/image-proxy")
-    public ResponseEntity<byte[]> proxyImage(@RequestParam String url) throws Exception {
-        URI uri = new URI(url);
-        URL imageUrl = uri.toURL();
-
-        HttpURLConnection connection = (HttpURLConnection) imageUrl.openConnection();
-        connection.setRequestProperty("User-Agent", "Mozilla/5.0");
-        byte[] bytes = connection.getInputStream().readAllBytes();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType(connection.getContentType()));
-
-        return ResponseEntity.ok().headers(headers).body(bytes);
-    }
-
 }
