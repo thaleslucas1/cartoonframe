@@ -26,16 +26,22 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody LoginRequestDTO body) {
+
         User user = this.repository.findByEmail(body.email()).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
         if (passwordEncoder.matches(body.password(), user.getPassword())) {
             String token = this.tokenService.generateToken(user);
+            System.out.println("[LOGIN] Login bem-sucedido para: " + user.getEmail());
+            System.out.println("[LOGIN] Token gerado: " + token);
             return ResponseEntity.ok(new ResponseDTO(user.getName(), token));
         }
+        System.out.println("[LOGIN] Senha incorreta para: " + body.email());
         return ResponseEntity.badRequest().build();
     }
 
     @PostMapping("/register")
     public ResponseEntity register(@RequestBody RegisterRequestDTO body) {
+
         Optional<User> user = this.repository.findByEmail(body.email());
 
         if (user.isEmpty()) {
@@ -46,6 +52,10 @@ public class AuthController {
             this.repository.save(newUser);
 
             String token = this.tokenService.generateToken(newUser);
+
+            System.out.println("[REGISTER] Novo usuário registrado: " + newUser.getEmail());
+            System.out.println("[REGISTER] Token gerado: " + token);
+
             return ResponseEntity.ok(new ResponseDTO(newUser.getName(), token));
         }
         return ResponseEntity.badRequest().build();
