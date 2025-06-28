@@ -130,8 +130,10 @@ public class ChallengeService {
         AttemptResultDTO result = new AttemptResultDTO();
         result.isCorrect = isCorrect;
         result.order = totalGuesses - 1;
+        System.out.println("order: " + result.order);
         int frameIndex = Math.min(result.order, challenge.getFrames().size() - 1);
         result.currentFrame = challenge.getFrames().get(frameIndex);
+        result.frames = challenge.getFrames().subList(0, frameIndex + 1);
         result.remainingGuesses = 5 - totalGuesses;
         result.challengeAnswer = (isCorrect || totalGuesses == 5) ? challenge.getChallengeAnswer() : null;
 
