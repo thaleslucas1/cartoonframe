@@ -7,6 +7,8 @@ let userToken = localStorage.getItem('jwtToken');
 let loggedInUser = null;
 let currentResetEmail = null; // Para armazenar o email durante o fluxo de redefinição de senha
 
+let sessionId = localStorage.getItem('sessionId'); // Variável global para o Session ID
+
 // Elementos do DOM
 const imagemElement = document.getElementById("imagemDoJogo");
 const inputJogo = document.getElementById("inputJogo");
@@ -22,23 +24,35 @@ const suggestionsDatalist = document.getElementById('suggestions');
 // Modals
 const loginModal = document.getElementById('loginModal');
 const registerModal = document.getElementById('registerModal');
-const forgotPasswordModal = document.getElementById('forgotPasswordModal'); // Novo
-const resetCodeModal = document.getElementById('resetCodeModal');         // Novo
-const newPasswordModal = document.getElementById('newPasswordModal');     // Novo
+const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+const resetCodeModal = document.getElementById('resetCodeModal');
+const newPasswordModal = document.getElementById('newPasswordModal');
 
 // Forms
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
-const forgotPasswordForm = document.getElementById('forgotPasswordForm'); // Novo
-const resetCodeForm = document.getElementById('resetCodeForm');         // Novo
-const newPasswordForm = document.getElementById('newPasswordForm');     // Novo
+const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+const resetCodeForm = document.getElementById('resetCodeForm');
+const newPasswordForm = document.getElementById('newPasswordForm');
 
 // Messages
 const loginMessage = document.getElementById('loginMessage');
 const registerMessage = document.getElementById('registerMessage');
-const forgotMessage = document.getElementById('forgotMessage');         // Novo
-const resetCodeMessage = document.getElementById('resetCodeMessage');   // Novo
-const newPasswordMessage = document.getElementById('newPasswordMessage'); // Novo
+const forgotMessage = document.getElementById('forgotMessage');
+const resetCodeMessage = document.getElementById('resetCodeMessage');
+const newPasswordMessage = document.getElementById('newPasswordMessage');
+
+/**
+ * Função para gerar um UUID (Identificador Único Universal) v4.
+ * Usado para criar um Session ID único para usuários anônimos.
+ * Fonte: https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid
+ */
+function generateUuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
 
 /**
  * Função para formatar a data ignorando o timezone,
@@ -50,32 +64,28 @@ function formatDateWithoutTimezone(dateString) {
 }
 
 /**
- * Função que retorna os headers adequados para a rota.
- * Não adiciona Authorization em rotas públicas.
- * @param {string} fullRoute - A rota completa que está sendo chamada (e.g., 'http://localhost:8080/api/challenge/today').
+ * Função que retorna os headers adequados para a requisição.
+ * Prioriza o JWT se o usuário estiver logado, caso contrário, envia o Session ID
+ * para rotas onde o backend precisa rastrear usuários anônimos.
+ * @param {string} fullRoute - A rota completa que está sendo chamada.
  * @param {boolean} isJson - Indica se o Content-Type deve ser 'application/json'.
  * @returns {Object} Headers para a requisição.
  */
 function getHeadersForRoute(fullRoute, isJson = false) {
-    const publicRoutes = [
-        `${API_BASE_URL}/challenge/today`,
-        `${API_BASE_URL}/challenge/ranking/weekly`,
-        `${AUTH_BASE_URL}/login`,
-        `${AUTH_BASE_URL}/register`,
-        `${PASSWORD_RESET_BASE_URL}/request-code`, // Nova rota pública
-        `${PASSWORD_RESET_BASE_URL}/confirm-code`, // Nova rota pública
-        `${PASSWORD_RESET_BASE_URL}/reset-password` // Nova rota pública
-    ];
-
     let headers = {};
 
     if (isJson) {
         headers['Content-Type'] = 'application/json';
     }
 
-    if (!publicRoutes.includes(fullRoute)) {
-        if (userToken && userToken !== 'null' && userToken !== 'undefined') {
-            headers['Authorization'] = `Bearer ${userToken}`;
+    // Se houver um JWT válido, sempre o envie
+    if (userToken && userToken !== 'null' && userToken !== 'undefined') {
+        headers['Authorization'] = `Bearer ${userToken}`;
+    } else {
+        // Se NÃO houver JWT (usuário anônimo), mas houver um Session ID, envie-o.
+        // Isso é crucial para que o backend rastreie usuários anônimos em /challenge/today e /challenge/try
+        if (sessionId) {
+            headers['X-Session-ID'] = sessionId;
         }
     }
     return headers;
@@ -83,6 +93,15 @@ function getHeadersForRoute(fullRoute, isJson = false) {
 
 // Listeners de Eventos
 document.addEventListener('DOMContentLoaded', () => {
+    // Inicializa o Session ID para usuários anônimos
+    if (!sessionId) {
+        sessionId = generateUuidv4();
+        localStorage.setItem('sessionId', sessionId);
+        console.log("Novo Session ID gerado e guardado:", sessionId);
+    } else {
+        console.log("Session ID existente:", sessionId);
+    }
+
     checkUserLoginStatus();
     fetchDailyChallenge();
     fetchWeeklyRanking();
@@ -102,7 +121,7 @@ async function checkUserLoginStatus() {
             });
             if (response.ok) {
                 loggedInUser = await response.json();
-                displayUserProfile(loggedInUser.name || loggedInUser.nickname || loggedInUser.email); // Adicionado nickname
+                displayUserProfile(loggedInUser.name || loggedInUser.nickname || loggedInUser.email);
             } else {
                 console.error("Falha ao buscar perfil do usuário, token inválido ou expirado. Status:", response.status);
                 clearUserSession();
@@ -131,18 +150,20 @@ function clearUserSession() {
     displayLoginButton();
 }
 
-async function login(identifier, password) { // 'identifier' pode ser email ou nickname
+async function login(identifier, password) {
     try {
         const response = await fetch(`${AUTH_BASE_URL}/login`, {
             method: 'POST',
             headers: getHeadersForRoute(`${AUTH_BASE_URL}/login`, true),
-            body: JSON.stringify({ identifier, password }) // Envia identificador (email ou nickname)
+            body: JSON.stringify({ identifier, password })
         });
 
         const data = await response.json();
         if (response.ok) {
             localStorage.setItem('jwtToken', data.token);
             userToken = data.token;
+            localStorage.removeItem('sessionId'); // Remove session ID on login
+            sessionId = null;
             await checkUserLoginStatus();
             await fetchDailyChallenge();
             closeModal();
@@ -156,18 +177,20 @@ async function login(identifier, password) { // 'identifier' pode ser email ou n
     }
 }
 
-async function register(name, nickname, email, password) { // Adicionado 'nickname'
+async function register(name, nickname, email, password) {
     try {
         const response = await fetch(`${AUTH_BASE_URL}/register`, {
             method: 'POST',
             headers: getHeadersForRoute(`${AUTH_BASE_URL}/register`, true),
-            body: JSON.stringify({ name, nickname, email, password }) // Envia nickname
+            body: JSON.stringify({ name, nickname, email, password })
         });
 
         const data = await response.json();
         if (response.ok) {
             localStorage.setItem('jwtToken', data.token);
             userToken = data.token;
+            localStorage.removeItem('sessionId'); // Remove session ID on register
+            sessionId = null;
             await checkUserLoginStatus();
             await fetchDailyChallenge();
             closeModal();
@@ -191,9 +214,9 @@ async function requestPasswordResetCode(email) {
         });
         const data = await response.json();
         if (response.ok) {
-            currentResetEmail = email; // Armazena o email para as próximas etapas
+            currentResetEmail = email;
             displayMessage(data.message || "Código de redefinição enviado para seu email.", "success", forgotMessage);
-            setTimeout(showResetCodeForm, 1500); // Mostra a próxima tela após um breve atraso
+            setTimeout(showResetCodeForm, 1500);
         } else {
             displayMessage(data.message || "Erro ao solicitar código. Verifique o email.", "error", forgotMessage);
         }
@@ -218,7 +241,7 @@ async function confirmPasswordResetCode(code) {
         const data = await response.json();
         if (response.ok) {
             displayMessage(data.message || "Código confirmado com sucesso!", "success", resetCodeMessage);
-            setTimeout(showNewPasswordForm, 1500); // Mostra a tela de nova senha
+            setTimeout(showNewPasswordForm, 1500);
         } else {
             displayMessage(data.message || "Código inválido ou expirado.", "error", resetCodeMessage);
         }
@@ -247,8 +270,8 @@ async function resetPassword(newPassword, confirmNewPassword) {
         const data = await response.json();
         if (response.ok) {
             displayMessage(data.message || "Senha redefinida com sucesso! Redirecionando para login...", "success", newPasswordMessage);
-            currentResetEmail = null; // Limpa o email de reset
-            setTimeout(showLogin, 2000); // Volta para a tela de login
+            currentResetEmail = null;
+            setTimeout(showLogin, 2000);
         } else {
             displayMessage(data.message || "Erro ao redefinir senha.", "error", newPasswordMessage);
         }
@@ -265,7 +288,7 @@ function showLogin() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    loginMessage.textContent = ''; // Clear previous messages
+    loginMessage.textContent = '';
     loginForm.reset();
 }
 
@@ -275,7 +298,7 @@ function showRegister() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    registerMessage.textContent = ''; // Clear previous messages
+    registerMessage.textContent = '';
     registerForm.reset();
 }
 
@@ -285,7 +308,7 @@ function showForgotPassword() {
     registerModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    forgotMessage.textContent = ''; // Clear previous messages
+    forgotMessage.textContent = '';
     forgotPasswordForm.reset();
 }
 
@@ -317,7 +340,7 @@ function closeModal() {
 // --- Listeners de submissão de formulários ---
 loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const identifier = document.getElementById('loginIdentifier').value; // Pode ser email ou nickname
+    const identifier = document.getElementById('loginIdentifier').value;
     const password = document.getElementById('loginPassword').value;
     login(identifier, password);
 });
@@ -325,7 +348,7 @@ loginForm.addEventListener('submit', (e) => {
 registerForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const name = document.getElementById('registerName').value;
-    const nickname = document.getElementById('registerNickname').value; // Pega o nickname
+    const nickname = document.getElementById('registerNickname').value;
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
     register(name, nickname, email, password);
@@ -353,34 +376,34 @@ newPasswordForm.addEventListener('submit', (e) => {
 // --- Lógica de Jogo (Imagens e Botões) ---
 
 async function fetchDailyChallenge() {
+    console.log("[IMAGEM LOG] Início de fetchDailyChallenge.");
     try {
+        const requestHeaders = getHeadersForRoute(`${API_BASE_URL}/challenge/today`);
+        console.log("[IMAGEM LOG] Headers para /challenge/today:", requestHeaders);
+
         const response = await fetch(`${API_BASE_URL}/challenge/today`, {
-            headers: getHeadersForRoute(`${API_BASE_URL}/challenge/today`)
+            headers: requestHeaders
         });
         if (!response.ok) {
             throw new Error(`Erro HTTP! status: ${response.status}`);
         }
         currentChallenge = await response.json();
+        console.log("[IMAGEM LOG] currentChallenge recebido:", currentChallenge);
+        console.log("[IMAGEM LOG] currentChallenge.frames:", currentChallenge.frames);
 
         challengeDateElement.textContent = `Desafio de ${formatDateWithoutTimezone(currentChallenge.date)}`;
 
-        // Na carga inicial, sempre mostra o primeiro frame (índice 0)
-        // E o botão '1' deve estar disponível.
-        imagemElement.src = `http://localhost:8080/image/proxy?url=${encodeURIComponent(currentChallenge.frames[0])}`;
+        const imageUrl = `http://localhost:8080/image-proxy?url=${encodeURIComponent(currentChallenge.frames[0])}`;
+        console.log("[IMAGEM LOG] Definindo imagem inicial para:", imageUrl);
+        imagemElement.src = imageUrl;
         remainingGuessesElement.textContent = `Tentativas restantes: ${currentChallenge.remainingGuesses}`;
 
-        // Adaptação para o número de frames mostrados na carga inicial:
-        // O `order` do backend na `AttemptResultDTO` representa o número de palpites feitos antes da *atual*.
-        // Para a carga inicial, se o `remainingGuesses` for 5 (total de tentativas), `order` implícito é 0.
-        // Se `remainingGuesses` for 4, `order` implícito é 1, etc.
-        // O número de frames revelados deve ser (total de tentativas - tentativas restantes) + 1.
-        // Ex: 5 tentativas totais - 5 restantes + 1 = 1 frame mostrado (no início).
-        // Ex: 5 tentativas totais - 4 restantes + 1 = 2 frames mostrados (após 1 erro).
         const framesInitiallyShown = (5 - currentChallenge.remainingGuesses) + 1;
-        renderFrameButtons(framesInitiallyShown); // Renderiza botões para frames já "desbloqueados"
+        console.log("[IMAGEM LOG] Frames inicialmente visíveis para botões:", framesInitiallyShown);
+        renderFrameButtons(framesInitiallyShown);
 
-        listaJogos.innerHTML = ""; // Limpa palpites anteriores ao carregar novo desafio (se não vierem do backend)
-        updateGameState(currentChallenge.remainingGuesses, false); // Assume não resolvido na carga inicial
+        listaJogos.innerHTML = "";
+        updateGameState(currentChallenge.remainingGuesses, false);
         displayMessage('', 'info');
     } catch (error) {
         console.error("Erro ao buscar o desafio diário:", error);
@@ -391,30 +414,30 @@ async function fetchDailyChallenge() {
 }
 
 async function submitGuess() {
+    console.log("[IMAGEM LOG] Início de submitGuess.");
     const guess = inputJogo.value.trim();
     if (guess === "") {
         displayMessage("Por favor, digite um palpite!", "error");
         return;
     }
 
-    // Desabilita input e botão temporariamente para evitar cliques múltiplos
     inputJogo.disabled = true;
     document.querySelector('.game button').disabled = true;
 
     try {
-        const headers = getHeadersForRoute(`${API_BASE_URL}/challenge/try`, true);
+        const requestHeaders = getHeadersForRoute(`${API_BASE_URL}/challenge/try`, true);
+        console.log("[IMAGEM LOG] Headers para /challenge/try:", requestHeaders);
 
         const response = await fetch(`${API_BASE_URL}/challenge/try`, {
             method: 'POST',
-            headers: headers,
-            body: JSON.stringify({ guess: guess }) // Envia palpite
+            headers: requestHeaders,
+            body: JSON.stringify({ guess: guess })
         });
 
-        // Adaptação: Lida com status 400 (Bad Request)
         if (response.status === 400) {
             const errorData = await response.json();
             displayMessage(errorData.message || "Erro ao processar o palpite.", "error");
-            inputJogo.disabled = false; // Reabilita em caso de erro de validação (não fim de jogo)
+            inputJogo.disabled = false;
             document.querySelector('.game button').disabled = false;
             return;
         }
@@ -423,7 +446,8 @@ async function submitGuess() {
             throw new Error(`Erro HTTP! status: ${response.status}`);
         }
 
-        const result = await response.json(); // AttemptResultDTO do backend
+        const result = await response.json();
+        console.log("[IMAGEM LOG] Resultado da tentativa (result):", result);
 
         let newGuessItem = document.createElement("li");
         newGuessItem.textContent = guess;
@@ -431,43 +455,36 @@ async function submitGuess() {
         if (result.isCorrect) {
             displayMessage(`Parabéns! Você acertou: ${result.challengeAnswer}!`, "success");
             newGuessItem.classList.add('correct-guess');
-            // Ao acertar, exibe a ÚLTIMA imagem disponível (índice final)
-            imagemElement.src = `http://localhost:8080/image/proxy?url=${encodeURIComponent(currentChallenge.frames[currentChallenge.frames.length - 1])}`;
+            const imageUrl = `http://localhost:8080/image-proxy?url=${encodeURIComponent(currentChallenge.frames[currentChallenge.frames.length - 1])}`;
+            console.log("[IMAGEM LOG] Acertou! Definindo imagem final para:", imageUrl);
+            imagemElement.src = imageUrl;
             inputJogo.disabled = true;
             document.querySelector('.game button').disabled = true;
-            // Quando acerta, todos os botões de frame devem ser mostrados
+            console.log("[IMAGEM LOG] Renderizando TODOS os botões de frame após acerto.");
             renderFrameButtons(currentChallenge.frames.length);
         } else {
             displayMessage("Você errou. Tente novamente!", "error");
             newGuessItem.classList.add('incorrect-guess');
 
-            // Lógica para mostrar o PRÓXIMO frame após um erro:
-            // `result.order` é a ordem da tentativa atual (0-indexed).
-            // A próxima imagem a ser mostrada será `currentChallenge.frames[result.order + 1]`.
-            // Ex: Se `order` é 0 (primeira tentativa errada), mostra `frames[1]`.
             const nextFrameIndexToShow = result.order + 1;
-            const actualFrameToShow = Math.min(nextFrameIndexToShow, currentChallenge.frames.length - 1); // Garante que não excede o array
-
-            imagemElement.src = `http://localhost:8080/image/proxy?url=${encodeURIComponent(currentChallenge.frames[actualFrameToShow])}`;
+            const actualFrameToShow = Math.min(nextFrameIndexToShow, currentChallenge.frames.length - 1);
+            const imageUrl = `http://localhost:8080/image-proxy?url=${encodeURIComponent(currentChallenge.frames[actualFrameToShow])}`;
+            console.log(`[IMAGEM LOG] Errou. Próximo frame a ser mostrado (índice ${actualFrameToShow}):`, imageUrl);
+            imagemElement.src = imageUrl;
             remainingGuessesElement.textContent = `Tentativas restantes: ${result.remainingGuesses}`;
 
-            // O número de botões a serem renderizados é (número de tentativas feitas) + 1 (o frame que acaba de ser revelado)
-            // `result.order` é o índice da tentativa, então `result.order + 1` é o número de tentativas feitas.
-            // Para o Framed, o botão `N` é revelado quando a imagem `N` (índice N-1) é mostrada.
-            // O `result.order` é o índice da tentativa feita (0 para a 1ª, 1 para a 2ª...).
-            // O número de frames revelados será `result.order + 1 + 1` para a próxima imagem.
-            // Ou de forma mais simples: total de tentativas feitas (result.order + 1) + 1 (o novo frame).
             const framesToRenderButtons = (result.order + 1) + 1;
+            console.log("[IMAGEM LOG] Renderizando botões até o frame:", framesToRenderButtons);
             renderFrameButtons(framesToRenderButtons);
-
 
             if (result.remainingGuesses === 0 && !result.isCorrect) {
                 displayMessage(`Suas tentativas acabaram! O desenho era: ${result.challengeAnswer}`, "error");
                 inputJogo.disabled = true;
                 document.querySelector('.game button').disabled = true;
-                // Ao final das tentativas, exibe o último frame (revelando a resposta completa)
-                imagemElement.src = `http://localhost:8080/image/proxy?url=${encodeURIComponent(currentChallenge.frames[currentChallenge.frames.length - 1])}`;
-                // E todos os botões de frame devem ser mostrados
+                const finalImageUrl = `http://localhost:8080/image-proxy?url=${encodeURIComponent(currentChallenge.frames[currentChallenge.frames.length - 1])}`;
+                console.log("[IMAGEM LOG] Fim das tentativas. Definindo imagem final para:", finalImageUrl);
+                imagemElement.src = finalImageUrl;
+                console.log("[IMAGEM LOG] Renderizando TODOS os botões de frame após fim das tentativas.");
                 renderFrameButtons(currentChallenge.frames.length);
             } else {
                 inputJogo.disabled = false;
@@ -475,7 +492,7 @@ async function submitGuess() {
             }
         }
 
-        listaJogos.prepend(newGuessItem); // Adiciona novo palpite no topo da lista
+        listaJogos.prepend(newGuessItem);
         inputJogo.value = "";
         updateGameState(result.remainingGuesses, result.isCorrect);
 
@@ -492,14 +509,14 @@ async function submitGuess() {
  * @param {number} numFramesToRender O número total de frames para os quais botões devem ser criados (começando de 1).
  */
 function renderFrameButtons(numFramesToRender) {
-    frameNavigation.innerHTML = ''; // Limpa botões existentes
-    // Garante que não criamos mais botões do que frames disponíveis
+    console.log("[IMAGEM LOG] renderFrameButtons chamado com numFramesToRender:", numFramesToRender);
+    frameNavigation.innerHTML = '';
     const actualNumButtons = Math.min(numFramesToRender, currentChallenge.frames.length);
+    console.log("[IMAGEM LOG] Número REAL de botões a serem criados:", actualNumButtons);
 
     for (let i = 0; i < actualNumButtons; i++) {
         const button = document.createElement('button');
-        button.textContent = i + 1; // Texto do botão (1, 2, 3...)
-        // Associa o clique do botão à função que mostra o frame correspondente
+        button.textContent = i + 1;
         button.onclick = () => showSpecificFrame(i);
         frameNavigation.appendChild(button);
     }
@@ -510,17 +527,19 @@ function renderFrameButtons(numFramesToRender) {
  * @param {number} frameIndex O índice (0-based) do frame a ser exibido do array `currentChallenge.frames`.
  */
 function showSpecificFrame(frameIndex) {
+    console.log("[IMAGEM LOG] showSpecificFrame chamado com frameIndex:", frameIndex);
     if (currentChallenge && currentChallenge.frames && currentChallenge.frames[frameIndex]) {
-        // Usa o proxy de imagem para carregar imagens de Imgur, etc.
-        imagemElement.src = `http://localhost:8080/image/proxy?url=${encodeURIComponent(currentChallenge.frames[frameIndex])}`;
+        const imageUrl = `http://localhost:8080/image-proxy?url=${encodeURIComponent(currentChallenge.frames[frameIndex])}`;
+        console.log("[IMAGEM LOG] Definindo imagem para o frame:", frameIndex, "URL:", imageUrl);
+        imagemElement.src = imageUrl;
+    } else {
+        console.warn("[IMAGEM LOG] Não foi possível mostrar o frame:", frameIndex, ". currentChallenge ou frames ausentes/inválidos.");
     }
 }
 
 function renderPreviousGuesses(guesses = []) {
-    // Esta função foi mantida, mas não é usada para carregar palpites persistidos do backend
-    // porque o ChallengeDTO atual não os inclui.
-    // Ela só será chamada com os palpites recebidos no AttemptResultDTO ou com um array vazio na carga inicial.
-    // O submitGuess já adiciona o novo palpite via prepend.
+    // Esta função é mantida, mas a lógica de carregar palpites persistidos do backend
+    // para a lista de jogos dependeria de 'ChallengeDTO' incluir esses dados.
 }
 
 function updateGameState(remainingGuesses, isCorrect) {
