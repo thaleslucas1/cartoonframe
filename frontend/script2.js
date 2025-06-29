@@ -388,35 +388,36 @@ newPasswordForm.addEventListener('submit', (e) => {
 // --- Lógica de Jogo (Imagens e Botões) ---
 
 async function fetchDailyChallenge() {
-    console.log("[IMAGEM LOG] Início de fetchDailyChallenge.");
     try {
-        const requestHeaders = getHeadersForRoute(`${API_BASE_URL}/challenge/today`);
-        console.log("[IMAGEM LOG] Headers para /challenge/today:", requestHeaders);
-
         const response = await fetch(`${API_BASE_URL}/challenge/today`, {
-            headers: requestHeaders
+            headers: getHeadersForRoute(`${API_BASE_URL}/challenge/today`)
         });
-        if (!response.ok) {
-            throw new Error(`Erro HTTP! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Erro HTTP! status: ${response.status}`);
+
         currentChallenge = await response.json();
-        console.log("[IMAGEM LOG] currentChallenge recebido:", currentChallenge);
-        console.log("[IMAGEM LOG] currentChallenge.frames:", currentChallenge.frames);
 
         challengeDateElement.textContent = `Desafio de ${formatDateWithoutTimezone(currentChallenge.date)}`;
 
-        // Imagem carregada diretamente do URL no 'frames[0]'
-        imagemElement.src = currentChallenge.frames[0];
-        console.log("[IMAGEM LOG] Definindo imagem inicial para:", imagemElement.src); // Log atualizado
+        // Atualiza imagem para o último frame revelado
+        const lastFrameIndex = currentChallenge.frames.length - 1;
+        imagemElement.src = currentChallenge.frames[lastFrameIndex];
+
         remainingGuessesElement.textContent = `Tentativas restantes: ${currentChallenge.remainingGuesses}`;
 
-        const framesInitiallyShown = (5 - currentChallenge.remainingGuesses) + 1;
-        console.log("[IMAGEM LOG] Frames inicialmente visíveis para botões:", framesInitiallyShown);
-        renderFrameButtons(framesInitiallyShown);
+        // Se o desafio estiver completo, exibe a resposta correta e desabilita input
+        if (currentChallenge.isCompleted) {
+            displayMessage(`O desafio terminou! Resposta: ${currentChallenge.challengeAnswer}`, "info");
+            inputJogo.disabled = true;
+            document.querySelector('.game button').disabled = true;
+        } else {
+            displayMessage('', 'info');
+            inputJogo.disabled = false;
+            document.querySelector('.game button').disabled = false;
+        }
 
-        listaJogos.innerHTML = "";
-        updateGameState(currentChallenge.remainingGuesses, false);
-        displayMessage('', 'info');
+        renderFrameButtons(currentChallenge.frames.length);
+        listaJogos.innerHTML = ''; // Se quiser, pode restaurar palpites salvos também
+
     } catch (error) {
         console.error("Erro ao buscar o desafio diário:", error);
         displayMessage("Não foi possível carregar o desafio de hoje. Tente novamente mais tarde.", "error");
@@ -424,6 +425,7 @@ async function fetchDailyChallenge() {
         document.querySelector('.game button').disabled = true;
     }
 }
+
 
 async function submitGuess() {
     console.log("[IMAGEM LOG] Início de submitGuess.");
@@ -461,6 +463,11 @@ async function submitGuess() {
         const result = await response.json();
         console.log("[IMAGEM LOG] Resultado da tentativa (result):", result);
 
+        // ESSA É A MUDANÇA CRUCIAL: Atualiza a lista de frames revelados no frontend
+        // com o que o backend enviou em 'result.frames'
+        currentChallenge.frames = result.frames;
+        console.log("[IMAGEM LOG] currentChallenge.frames atualizado:", currentChallenge.frames);
+
         let newGuessItem = document.createElement("li");
         newGuessItem.textContent = guess;
 
@@ -469,165 +476,84 @@ async function submitGuess() {
             newGuessItem.classList.add('correct-guess');
             // Imagem final carregada diretamente do URL em 'result.currentFrame'
             imagemElement.src = result.currentFrame;
-            console.log("[IMAGEM LOG] Acertou! Definindo imagem final para:", imagemElement.src); // Log atualizado
+            console.log("[IMAGEM LOG] Imagem final carregada:", result.currentFrame);
             inputJogo.disabled = true;
             document.querySelector('.game button').disabled = true;
-            console.log("[IMAGEM LOG] Renderizando TODOS os botões de frame após acerto.");
-            renderFrameButtons(currentChallenge.frames.length);
         } else {
-            displayMessage("Você errou. Tente novamente!", "error");
-            newGuessItem.classList.add('incorrect-guess');
-
-            const nextFrameIndexToShow = result.order + 1;
-            const actualFrameToShow = Math.min(nextFrameIndexToShow, currentChallenge.frames.length - 1);
-            // Próxima imagem carregada diretamente do URL em 'result.currentFrame'
-            imagemElement.src = result.currentFrame;
-            console.log(`[IMAGEM LOG] Errou. Próximo frame a ser mostrado (índice ${actualFrameToShow}):`, imagemElement.src); // Log atualizado
-            remainingGuessesElement.textContent = `Tentativas restantes: ${result.remainingGuesses}`;
-
-            const framesToRenderButtons = (result.order + 1) + 1;
-            console.log("[IMAGEM LOG] Renderizando botões até o frame:", framesToRenderButtons);
-            renderFrameButtons(framesToRenderButtons);
-
-            if (result.remainingGuesses === 0 && !result.isCorrect) {
-                displayMessage(`Suas tentativas acabaram! O desenho era: ${result.challengeAnswer}`, "error");
-                inputJogo.disabled = true;
-                document.querySelector('.game button').disabled = true;
-                // Última imagem carregada diretamente do URL em 'result.currentFrame'
-                imagemElement.src = result.currentFrame; // result.currentFrame já deve ser o último frame se as tentativas acabaram.
-                console.log("[IMAGEM LOG] Fim das tentativas. Definindo imagem final para:", imagemElement.src); // Log atualizado
-                console.log("[IMAGEM LOG] Renderizando TODOS os botões de frame após fim das tentativas.");
-                renderFrameButtons(currentChallenge.frames.length);
-            } else {
-                inputJogo.disabled = false;
-                document.querySelector('.game button').disabled = false;
-            }
+            displayMessage(`Errado! Tente novamente.`, "error");
+            imagemElement.src = currentChallenge.frames[currentChallenge.frames.length - 1];
+            inputJogo.disabled = false;
+            document.querySelector('.game button').disabled = false;
         }
 
-        listaJogos.prepend(newGuessItem);
-        inputJogo.value = "";
-        updateGameState(result.remainingGuesses, result.isCorrect);
+        listaJogos.appendChild(newGuessItem);
+        remainingGuessesElement.textContent = `Tentativas restantes: ${result.remainingGuesses}`;
 
+        renderFrameButtons(currentChallenge.frames.length);
+        inputJogo.value = '';
     } catch (error) {
         console.error("Erro ao enviar palpite:", error);
-        displayMessage("Ocorreu um erro ao processar seu palpite.", "error");
+        displayMessage("Erro ao conectar com o servidor. Tente novamente mais tarde.", "error");
         inputJogo.disabled = false;
         document.querySelector('.game button').disabled = false;
     }
 }
 
-/**
- * Renderiza os botões de navegação dos frames.
- * @param {number} numFramesToRender O número total de frames para os quais botões devem ser criados (começando de 1).
- */
-function renderFrameButtons(numFramesToRender) {
-    console.log("[IMAGEM LOG] renderFrameButtons chamado com numFramesToRender:", numFramesToRender);
+function renderFrameButtons(totalFrames) {
     frameNavigation.innerHTML = '';
-    const actualNumButtons = Math.min(numFramesToRender, currentChallenge.frames.length);
-    console.log("[IMAGEM LOG] Número REAL de botões a serem criados:", actualNumButtons);
-
-    for (let i = 0; i < actualNumButtons; i++) {
-        const button = document.createElement('button');
-        button.textContent = i + 1;
-        button.onclick = () => showSpecificFrame(i);
+    for (let i = 0; i < totalFrames; i++) {
+        let button = document.createElement('button');
+        button.textContent = `${i + 1}`;
+        button.addEventListener('click', () => {
+            imagemElement.src = currentChallenge.frames[i];
+        });
         frameNavigation.appendChild(button);
     }
 }
 
-/**
- * Exibe um frame específico do desafio com base no índice.
- * @param {number} frameIndex O índice (0-based) do frame a ser exibido do array `currentChallenge.frames`.
- */
-function showSpecificFrame(frameIndex) {
-    console.log("[IMAGEM LOG] showSpecificFrame chamado com frameIndex:", frameIndex);
-    if (currentChallenge && currentChallenge.frames && currentChallenge.frames[frameIndex]) {
-        // Imagem carregada diretamente do URL em 'currentChallenge.frames[frameIndex]'
-        imagemElement.src = currentChallenge.frames[frameIndex];
-        console.log("[IMAGEM LOG] Definindo imagem para o frame:", frameIndex, "URL:", imagemElement.src); // Log atualizado
-    } else {
-        console.warn("[IMAGEM LOG] Não foi possível mostrar o frame:", frameIndex, ". currentChallenge ou frames ausentes/inválidos.");
-    }
-}
-
-function renderPreviousGuesses(guesses = []) {
-    // Esta função é mantida, mas a lógica de carregar palpites persistidos do backend
-    // para a lista de jogos dependeria de 'ChallengeDTO' incluir esses dados.
-}
-
-function updateGameState(remainingGuesses, isCorrect) {
-    const isGameOver = isCorrect || remainingGuesses <= 0;
-    inputJogo.disabled = isGameOver;
-    document.querySelector('.game button').disabled = isGameOver;
-}
-
-/**
- * Exibe uma mensagem ao usuário com um tipo específico (para estilização).
- * @param {string} text - O texto da mensagem.
- * @param {string} type - O tipo da mensagem ('success', 'error', 'info').
- * @param {HTMLElement} [element=mensagem] - O elemento DOM onde a mensagem será exibida. Padrão é 'mensagem'.
- */
-function displayMessage(text, type, element = mensagem) {
-    element.textContent = text;
-    element.className = `message ${type}`;
-}
-
-async function handleInputChange() {
-    const input = inputJogo.value.trim().toLowerCase();
+function handleInputChange() {
+    const input = inputJogo.value.toLowerCase();
     suggestionsDatalist.innerHTML = '';
 
-    if (input.length < 2) {
-        return;
+    // Supondo que currentChallenge.suggestions seja uma lista de palavras para sugerir
+    if (currentChallenge && currentChallenge.suggestions) {
+        currentChallenge.suggestions.forEach(suggestion => {
+            if (suggestion.toLowerCase().startsWith(input) && input.length > 0) {
+                const option = document.createElement('option');
+                option.value = suggestion;
+                suggestionsDatalist.appendChild(option);
+            }
+        });
     }
-
-    const potentialCartoonAnswers = [
-        "Avatar: A Lenda de Aang", "Apenas um Show", "As Meninas Superpoderosas", "Ben 10",
-        "Bob Esponja Calça Quadrada", "Caverna do Dragão", "Corrida Maluca", "Du, Dudu e Edu",
-        "O Incrível Mundo de Gumball", "Os Simpsons", "Hora de Aventura", "Tom e Jerry",
-        "Pernalonga", "Os Flintstones", "Looney Tunes", "Scooby-Doo", "Dragon Ball Z",
-        "Pokémon", "Naruto", "Steven Universo", "Rick e Morty", "Gravity Falls",
-        "Star vs. as Forças do Mal", "Kim Possible", "Phineas e Ferb", "A Família Addams",
-        "Batman: A Série Animada", "Superman: A Série Animada", "Liga da Justiça",
-        "X-Men: Evolution", "DuckTales", "Animaniacs", "Pinky e o Cérebro",
-        "Hey Arnold!", "Rugrats", "A Turma da Mônica", "Jem e as Hologramas",
-        "She-Ra: A Princesa do Poder", "He-Man e os Mestres do Universo", "ThunderCats",
-        "Cavaleiros do Zodíaco", "Sailor Moon", "Digimon", "Yu-Gi-Oh!",
-        "As Aventuras de Jackie Chan", "Coragem, o Cão Covarde", "Laboratório de Dexter",
-        "A Vaca e o Frango"
-    ];
-
-    const filteredSuggestions = potentialCartoonAnswers.filter(cartoon =>
-        cartoon.toLowerCase().includes(input)
-    );
-
-    filteredSuggestions.forEach(suggestion => {
-        const option = document.createElement('option');
-        option.value = suggestion;
-        suggestionsDatalist.appendChild(option);
-    });
 }
 
 async function fetchWeeklyRanking() {
     try {
-        const response = await fetch(`${API_BASE_URL}/challenge/ranking/weekly`, {
-            headers: getHeadersForRoute(`${API_BASE_URL}/challenge/ranking/weekly`)
+        const response = await fetch(`${API_BASE_URL}/ranking/weekly`, {
+            headers: getHeadersForRoute(`${API_BASE_URL}/ranking/weekly`)
         });
-        if (!response.ok) {
-            throw new Error(`Erro HTTP! status: ${response.status}`);
-        }
-        const rankingData = await response.json();
+        if (!response.ok) throw new Error(`Erro HTTP! status: ${response.status}`);
 
+        const ranking = await response.json();
         rankingListElement.innerHTML = '';
-        if (rankingData && rankingData.length > 0) {
-            rankingData.forEach((user, index) => {
-                let listItem = document.createElement('li');
-                listItem.textContent = `${index + 1}. ${user.name || user.email} - ${user.score} pontos`;
-                rankingListElement.appendChild(listItem);
-            });
-        } else {
-            rankingListElement.innerHTML = '<li>Nenhum dado de ranking disponível.</li>';
-        }
+
+        ranking.forEach((user, index) => {
+            const li = document.createElement('li');
+            li.textContent = `${index + 1}. ${user.name || user.nickname || user.email} - Pontos: ${user.points}`;
+            rankingListElement.appendChild(li);
+        });
     } catch (error) {
         console.error("Erro ao buscar ranking semanal:", error);
-        rankingListElement.innerHTML = '<li>Erro ao carregar ranking.</li>';
     }
+}
+
+function logout() {
+    clearUserSession();
+    fetchDailyChallenge();
+}
+
+// Função para exibir mensagens
+function displayMessage(text, type = 'info', container = mensagem) {
+    container.textContent = text;
+    container.className = type; // Pode ser 'info', 'error', 'success' para estilização
 }
