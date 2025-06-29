@@ -14,6 +14,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -49,14 +50,37 @@ public class ChallengeService {
                                 && g.getSessionId().equals(sessionId);
                     }
                 })
+                .sorted(Comparator.comparingInt(Guess::getGuessOrder))
                 .toList();
 
-        int remainingGuesses = 5 - userGuesses.size();
+        int totalGuesses = userGuesses.size();
+
+        boolean completed = userGuesses.stream().anyMatch(Guess::isCorrect);
+
+        int frameCountToShow;
+        if (completed) {
+            int correctGuessIndex = userGuesses.stream()
+                    .filter(Guess::isCorrect)
+                    .findFirst()
+                    .map(Guess::getGuessOrder)
+                    .orElse(totalGuesses - 1);
+
+            frameCountToShow = Math.min(correctGuessIndex + 1, challenge.getFrames().size());
+        } else {
+            frameCountToShow = Math.min(totalGuesses + 1, challenge.getFrames().size());
+        }
+
+        int remainingGuesses = 5 - totalGuesses;
 
         ChallengeDTO dto = new ChallengeDTO();
         dto.date = challenge.getDate();
-        dto.frames = challenge.getFrames().subList(0, Math.min(1, challenge.getFrames().size()));
+        dto.frames = challenge.getFrames().subList(0, frameCountToShow);
         dto.remainingGuesses = remainingGuesses;
+        dto.isCompleted = completed;
+
+        if (completed) {
+            dto.challengeAnswer = challenge.getChallengeAnswer();
+        }
 
         return dto;
     }
