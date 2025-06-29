@@ -131,7 +131,15 @@ public class ChallengeService {
         result.isCorrect = isCorrect;
         result.order = totalGuesses - 1;
         System.out.println("order: " + result.order);
-        int frameIndex = Math.min(result.order + 1, challenge.getFrames().size() - 1);
+
+        int frameIndex;
+
+        if (isCorrect) {
+            frameIndex = Math.min(result.order, challenge.getFrames().size() - 1);
+        } else {
+            frameIndex = Math.min(result.order + 1, challenge.getFrames().size() - 1);
+        }
+
         result.currentFrame = challenge.getFrames().get(frameIndex);
         result.frames = challenge.getFrames().subList(0, frameIndex + 1);
         result.remainingGuesses = 5 - totalGuesses;
