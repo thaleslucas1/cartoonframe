@@ -7,4 +7,6 @@ public class ChallengeDTO {
     public LocalDate date;
     public List<String> frames;
     public int remainingGuesses;
+    public boolean isCompleted;
+    public String challengeAnswer;
 }
