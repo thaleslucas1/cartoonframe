@@ -8,4 +8,5 @@ public class UserSummaryDTO {
     public String email;
     public String nickname;
     public int score;
+    public UserStatus userStatus;
 }
