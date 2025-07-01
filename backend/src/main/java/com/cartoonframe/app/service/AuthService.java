@@ -10,6 +10,7 @@ import com.cartoonframe.app.model.VerifierUser;
 import com.cartoonframe.app.model.enums.UserStatus;
 import com.cartoonframe.app.repository.UserRepository;
 import com.cartoonframe.app.repository.VerifierUserRepository;
+import com.cartoonframe.app.util.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
