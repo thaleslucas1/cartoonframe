@@ -9,6 +9,15 @@ let currentResetEmail = null; // Para armazenar o email durante o fluxo de redef
 
 let sessionId = localStorage.getItem('sessionId'); // Variável global para o Session ID
 
+function getSessionId() {
+    let stored = localStorage.getItem('sessionId');
+    if (!stored) {
+        stored = generateUuidv4();
+        localStorage.setItem('sessionId', stored);
+    }
+    return stored;
+}
+
 // Elementos do DOM
 const imagemElement = document.getElementById("imagemDoJogo");
 const inputJogo = document.getElementById("inputJogo");
@@ -145,10 +154,10 @@ function displayLoginButton() {
 
 function clearUserSession() {
     localStorage.removeItem('jwtToken');
-    localStorage.removeItem('sessionId');
     userToken = null;
-    sessionId = null;
     loggedInUser = null;
+
+    sessionId = getSessionId(); 
     displayLoginButton();
 }
 
@@ -168,8 +177,8 @@ async function login(identifier, password) {
                 localStorage.setItem('sessionId', data.sessionId);
                 sessionId = data.sessionId;
             } else {
-                localStorage.removeItem('sessionId');
-                sessionId = null;
+                sessionId = localStorage.getItem('sessionId') || generateUuidv4();
+                localStorage.setItem('sessionId', sessionId);
             }
             await checkUserLoginStatus();
             await fetchDailyChallenge();
@@ -463,8 +472,7 @@ async function submitGuess() {
         const result = await response.json();
         console.log("[IMAGEM LOG] Resultado da tentativa (result):", result);
 
-        // ESSA É A MUDANÇA CRUCIAL: Atualiza a lista de frames revelados no frontend
-        // com o que o backend enviou em 'result.frames'
+        // Atualiza os frames com os enviados do backend
         currentChallenge.frames = result.frames;
         console.log("[IMAGEM LOG] currentChallenge.frames atualizado:", currentChallenge.frames);
 
@@ -474,16 +482,20 @@ async function submitGuess() {
         if (result.isCorrect) {
             displayMessage(`Parabéns! Você acertou: ${result.challengeAnswer}!`, "success");
             newGuessItem.classList.add('correct-guess');
-            // Imagem final carregada diretamente do URL em 'result.currentFrame'
             imagemElement.src = result.currentFrame;
-            console.log("[IMAGEM LOG] Imagem final carregada:", result.currentFrame);
             inputJogo.disabled = true;
             document.querySelector('.game button').disabled = true;
         } else {
-            displayMessage(`Errado! Tente novamente.`, "error");
+            if (result.remainingGuesses === 0) {
+                displayMessage(`Fim do desafio! A resposta era: ${result.challengeAnswer}`, "info");
+                inputJogo.disabled = true;
+                document.querySelector('.game button').disabled = true;
+            } else {
+                displayMessage(`Errado! Tente novamente.`, "error");
+                inputJogo.disabled = false;
+                document.querySelector('.game button').disabled = false;
+            }
             imagemElement.src = currentChallenge.frames[currentChallenge.frames.length - 1];
-            inputJogo.disabled = false;
-            document.querySelector('.game button').disabled = false;
         }
 
         listaJogos.appendChild(newGuessItem);
@@ -498,6 +510,7 @@ async function submitGuess() {
         document.querySelector('.game button').disabled = false;
     }
 }
+
 
 function renderFrameButtons(totalFrames) {
     frameNavigation.innerHTML = '';
@@ -549,7 +562,7 @@ async function fetchWeeklyRanking() {
 
 function logout() {
     clearUserSession();
-    fetchDailyChallenge();
+    location.reload();
 }
 
 // Função para exibir mensagens
