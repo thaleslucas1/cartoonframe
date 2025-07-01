@@ -52,6 +52,10 @@ public class AuthService {
     }
 
     public UserSummaryDTO register(RegisterRequestDTO dto) {
+
+        ValidationUtils.validateEmail(dto.email());
+        ValidationUtils.validatePassword(dto.password());
+
         if (repository.findByEmail(dto.email()).isPresent()) {
             throw new RuntimeException("Email já cadastrado");
         }
