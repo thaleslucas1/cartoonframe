@@ -42,7 +42,19 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity register(@RequestBody RegisterRequestDTO body) {
 
-        Optional<User> user = this.repository.findByEmail(body.email());
+    @GetMapping("/profile")
+    public ResponseEntity<?> profile(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("message", "Token ausente ou mal formatado"));
+            }
+            String token = authHeader.substring(7);
+            UserSummaryDTO profile = authService.getProfile(token);
+            return ResponseEntity.ok(profile);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(Map.of("message", e.getMessage()));
+        }
+    }
 
         if (user.isEmpty()) {
             User newUser = new User();
