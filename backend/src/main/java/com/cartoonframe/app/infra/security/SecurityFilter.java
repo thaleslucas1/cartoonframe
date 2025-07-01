@@ -35,6 +35,7 @@ public class SecurityFilter extends OncePerRequestFilter {
         if (uri.startsWith("/auth/login") ||
                 uri.startsWith("/auth/register") ||
                 uri.startsWith("/auth/verify") ||
+                uri.startsWith("/password-reset") ||
                 uri.startsWith("/h2-console")) {
             System.out.println("Pulando autenticação para rota pública: " + uri);
             filterChain.doFilter(request, response);
