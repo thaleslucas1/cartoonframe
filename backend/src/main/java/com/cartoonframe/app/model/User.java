@@ -1,5 +1,6 @@
 package com.cartoonframe.app.model;
 
+import com.cartoonframe.app.model.enums.UserStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -16,14 +17,19 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
     private String nickname;
 
+    @Column(nullable = false)
     private LocalDate registrationDate;
 
     private int score;
@@ -74,6 +80,10 @@ public class User {
         return guesses;
     }
 
+    public UserStatus getUserStatus() {
+        return userStatus;
+    }
+
     //setters
 
     public void setEmail(String email) {
@@ -98,5 +108,13 @@ public class User {
 
     public void setGuesses(List<Guess> guesses) {
         this.guesses = guesses;
+    }
+
+    public void setUserStatus(UserStatus userStatus) {
+        this.userStatus = userStatus;
+    }
+
+    public void setRegistrationDate(LocalDate registrationDate) {
+        this.registrationDate = registrationDate;
     }
 }
