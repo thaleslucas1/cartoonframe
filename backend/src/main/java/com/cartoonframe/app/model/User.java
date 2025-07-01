@@ -28,6 +28,10 @@ public class User {
 
     private int score;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserStatus userStatus;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Guess> guesses = new ArrayList<>();
 
