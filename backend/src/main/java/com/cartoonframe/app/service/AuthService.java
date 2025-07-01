@@ -43,6 +43,10 @@ public class AuthService {
             throw new RuntimeException("Senha incorreta");
         }
 
+        if (user.getUserStatus() != UserStatus.ACTIVE) {
+            throw new RuntimeException("Email não verificado. Por favor, verifique seu email antes de fazer login.");
+        }
+
         String token = tokenService.generateToken(user);
         return new ResponseDTO(user.getName(), token);
     }
