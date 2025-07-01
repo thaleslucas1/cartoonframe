@@ -56,19 +56,13 @@ public class AuthController {
         }
     }
 
-        if (user.isEmpty()) {
-            User newUser = new User();
-            newUser.setPassword(passwordEncoder.encode(body.password()));
-            newUser.setEmail(body.email());
-            newUser.setName(body.name());
-            this.repository.save(newUser);
-
-            String token = this.tokenService.generateToken(newUser);
-
-            System.out.println("[REGISTER] Novo usuário registrado: " + newUser.getEmail());
-            System.out.println("[REGISTER] Token gerado: " + token);
-
-            return ResponseEntity.ok(new ResponseDTO(newUser.getName(), token));
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyEmail(@RequestParam UUID uuid) {
+        try {
+            authService.verifyEmail(uuid);
+            return ResponseEntity.ok(Map.of("message", "Conta verificada com sucesso!"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
         return ResponseEntity.badRequest().build();
     }
