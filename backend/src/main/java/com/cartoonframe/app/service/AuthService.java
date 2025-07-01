@@ -30,9 +30,12 @@ public class AuthService {
     private final EmailService emailService;
 
     public ResponseDTO login(LoginRequestDTO dto) {
-        Optional<User> userOpt = dto.email() != null && !dto.email().isEmpty()
-                ? repository.findByEmail(dto.email())
-                : repository.findByNickname(dto.nickname());
+        Optional<User> userOpt;
+        if (dto.identifier().contains("@")) {
+            userOpt = repository.findByEmail(dto.identifier());
+        } else {
+            userOpt = repository.findByNickname(dto.identifier());
+        }
 
         User user = userOpt.orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
