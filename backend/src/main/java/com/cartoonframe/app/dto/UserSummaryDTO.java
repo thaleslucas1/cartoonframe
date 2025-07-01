@@ -6,5 +6,6 @@ public class UserSummaryDTO {
     public String id;
     public String name;
     public String email;
+    public String nickname;
     public int score;
 }
