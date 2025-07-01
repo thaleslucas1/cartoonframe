@@ -9,6 +9,15 @@ let currentResetEmail = null; // Para armazenar o email durante o fluxo de redef
 
 let sessionId = localStorage.getItem('sessionId'); // Variável global para o Session ID
 
+function getSessionId() {
+    let stored = localStorage.getItem('sessionId');
+    if (!stored) {
+        stored = generateUuidv4();
+        localStorage.setItem('sessionId', stored);
+    }
+    return stored;
+}
+
 // Elementos do DOM
 const imagemElement = document.getElementById("imagemDoJogo");
 const inputJogo = document.getElementById("inputJogo");
@@ -145,10 +154,10 @@ function displayLoginButton() {
 
 function clearUserSession() {
     localStorage.removeItem('jwtToken');
-    localStorage.removeItem('sessionId');
     userToken = null;
-    sessionId = null;
     loggedInUser = null;
+
+    sessionId = getSessionId(); 
     displayLoginButton();
 }
 
@@ -168,8 +177,8 @@ async function login(identifier, password) {
                 localStorage.setItem('sessionId', data.sessionId);
                 sessionId = data.sessionId;
             } else {
-                localStorage.removeItem('sessionId');
-                sessionId = null;
+                sessionId = localStorage.getItem('sessionId') || generateUuidv4();
+                localStorage.setItem('sessionId', sessionId);
             }
             await checkUserLoginStatus();
             await fetchDailyChallenge();
@@ -549,7 +558,7 @@ async function fetchWeeklyRanking() {
 
 function logout() {
     clearUserSession();
-    fetchDailyChallenge();
+    location.reload();
 }
 
 // Função para exibir mensagens
