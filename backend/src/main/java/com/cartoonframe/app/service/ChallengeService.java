@@ -55,7 +55,7 @@ public class ChallengeService {
 
         int totalGuesses = userGuesses.size();
 
-        boolean completed = userGuesses.stream().anyMatch(Guess::isCorrect);
+        boolean completed = userGuesses.stream().anyMatch(Guess::isCorrect) || userGuesses.size() >= 5;
 
         int frameCountToShow;
         if (completed) {
@@ -108,7 +108,7 @@ public class ChallengeService {
 
         System.out.println("Palpites anteriores encontrados: " + userGuesses.size());
 
-        boolean hasCompleted = userGuesses.stream().anyMatch(Guess::isCorrect);
+        boolean hasCompleted= userGuesses.stream().anyMatch(Guess::isCorrect) || userGuesses.size() >= 5;
 
         if (hasCompleted) {
             throw new RuntimeException("Você já completou esse desafio.");
@@ -167,12 +167,19 @@ public class ChallengeService {
         result.currentFrame = challenge.getFrames().get(frameIndex);
         result.frames = challenge.getFrames().subList(0, frameIndex + 1);
         result.remainingGuesses = 5 - totalGuesses;
-        result.challengeAnswer = (isCorrect || totalGuesses == 5) ? challenge.getChallengeAnswer() : null;
+        int maxAttempts = 5;
+        result.challengeAnswer = (isCorrect || totalGuesses >= maxAttempts) ? challenge.getChallengeAnswer() : null;
+
 
         if (user != null) {
             UserSummaryDTO dto = new UserSummaryDTO();
-            if (isCorrect || totalGuesses == 5) {
-                dto.score = (result.remainingGuesses + 1) * 25;
+            int calculatedScore = 0;
+            if (isCorrect) {
+                int attemptNumber = result.order + 1;
+                calculatedScore = 100 - (attemptNumber - 1) * 20;
+                user.setScore(user.getScore() + calculatedScore);
+                dto.score = user.getScore();
+                userRepository.save(user);
             }
             dto.id = user.getId();
             dto.name = user.getName();
