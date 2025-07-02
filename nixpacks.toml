@@ -14,7 +14,7 @@ commands = []
 
 [phases.start]
 commands = [
-  "java -jar backend/target/*.jar"
+  "cd backend && java -jar target/*.jar"
 ]
 
 [env]
