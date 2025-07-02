@@ -36,6 +36,7 @@ const registerModal = document.getElementById('registerModal');
 const forgotPasswordModal = document.getElementById('forgotPasswordModal');
 const resetCodeModal = document.getElementById('resetCodeModal');
 const newPasswordModal = document.getElementById('newPasswordModal');
+const userProfileModal = document.getElementById('userProfileModal'); // New: User Profile Modal
 
 // Forms
 const loginForm = document.getElementById('loginForm');
@@ -50,6 +51,15 @@ const registerMessage = document.getElementById('registerMessage');
 const forgotMessage = document.getElementById('forgotMessage');
 const resetCodeMessage = document.getElementById('resetCodeMessage');
 const newPasswordMessage = document.getElementById('newPasswordMessage');
+
+// New: User Profile Elements
+const profileNameElement = document.getElementById('profileName');
+const profileEmailElement = document.getElementById('profileEmail');
+const profileNicknameElement = document.getElementById('profileNickname');
+const profileScoreElement = document.getElementById('profileScore');
+const pastChallengesContainer = document.getElementById('pastChallengesContainer');
+const pastChallengesList = document.getElementById('pastChallengesList');
+
 
 /**
  * Função para gerar um UUID (Identificador Único Universal) v4.
@@ -144,10 +154,9 @@ async function checkUserLoginStatus() {
     }
 }
 
-function displayUserProfile(username) {
-    userProfileDiv.innerHTML = `<span>Olá, ${username}!</span> <button onclick="logout()">Sair</button>`;
+function displayUserProfile(nickname) {
+    userProfileDiv.innerHTML = `<span>${nickname}</span> <button onclick="showUserProfileModal()">Perfil</button>`;
 }
-
 function displayLoginButton() {
     userProfileDiv.innerHTML = `<button onclick="showLogin()">Login</button>`;
 }
@@ -309,6 +318,7 @@ function showLogin() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
+    userProfileModal.style.display = 'none'; // New: Hide user profile modal
     loginMessage.textContent = '';
     loginForm.reset();
 }
@@ -319,6 +329,7 @@ function showRegister() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
+    userProfileModal.style.display = 'none'; // New: Hide user profile modal
     registerMessage.textContent = '';
     registerForm.reset();
 }
@@ -329,6 +340,7 @@ function showForgotPassword() {
     registerModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
+    userProfileModal.style.display = 'none'; // New: Hide user profile modal
     forgotMessage.textContent = '';
     forgotPasswordForm.reset();
 }
@@ -338,6 +350,7 @@ function showResetCodeForm() {
     forgotPasswordModal.style.display = 'none';
     loginModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
+    userProfileModal.style.display = 'none'; // New: Hide user profile modal
     resetCodeMessage.textContent = '';
     resetCodeForm.reset();
 }
@@ -346,9 +359,32 @@ function showNewPasswordForm() {
     newPasswordModal.style.display = 'flex';
     resetCodeModal.style.display = 'none';
     loginModal.style.display = 'none';
+    userProfileModal.style.display = 'none'; // New: Hide user profile modal
     newPasswordMessage.textContent = '';
     newPasswordForm.reset();
 }
+
+function showUserProfileModal() {
+    if (!loggedInUser) {
+        console.error("Usuário não logado para exibir o perfil.");
+        return;
+    }
+    profileNameElement.textContent = loggedInUser.name;
+    profileEmailElement.textContent = loggedInUser.email;
+    profileNicknameElement.textContent = loggedInUser.nickname;
+    profileScoreElement.textContent = loggedInUser.score;
+
+    loginModal.style.display = 'none';
+    registerModal.style.display = 'none';
+    forgotPasswordModal.style.display = 'none';
+    resetCodeModal.style.display = 'none';
+    newPasswordModal.style.display = 'none';
+    userProfileModal.style.display = 'flex'; // New: Show user profile modal
+
+    pastChallengesContainer.style.display = 'none'; // Hide past challenges by default
+    pastChallengesList.innerHTML = ''; // Clear previous list
+}
+
 
 function closeModal() {
     loginModal.style.display = 'none';
@@ -356,6 +392,7 @@ function closeModal() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
+    userProfileModal.style.display = 'none'; // New: Hide user profile modal
 }
 
 // --- Listeners de submissão de formulários ---
@@ -435,6 +472,15 @@ async function fetchDailyChallenge() {
     }
 }
 
+// Function to fetch a challenge by date (placeholder for now)
+async function fetchChallengeByDate(date) {
+    // This will require a new backend endpoint or modification of existing /today endpoint
+    // For now, let's just log and simulate fetching if needed for testing frontend navigation
+    console.log(`Fetching challenge for date: ${date}. (Backend endpoint not implemented yet)`);
+    // Example: fetch(`${API_BASE_URL}/challenge/byDate?date=${date}`, ...)
+    displayMessage(`Carregando desafio para ${formatDateWithoutTimezone(date)}... (Funcionalidade de backend pendente)`, 'info');
+}
+
 
 async function submitGuess() {
     console.log("[IMAGEM LOG] Início de submitGuess.");
@@ -503,6 +549,13 @@ async function submitGuess() {
 
         renderFrameButtons(currentChallenge.frames.length);
         inputJogo.value = '';
+
+        // New: Update user score in the profile if applicable
+        if (loggedInUser && result.user && result.user.score !== undefined) {
+            loggedInUser.score = result.user.score;
+            profileScoreElement.textContent = loggedInUser.score; // Update score in modal if open
+        }
+
     } catch (error) {
         console.error("Erro ao enviar palpite:", error);
         displayMessage("Erro ao conectar com o servidor. Tente novamente mais tarde.", "error");
@@ -544,7 +597,7 @@ async function handleInputChange() {
     const input = inputJogo.value.trim().toLowerCase();
     suggestionsDatalist.innerHTML = '';
 
-    if (input.length < 1) {
+    if (input.length < 2) {
         return;
     }
 
@@ -604,4 +657,70 @@ function logout() {
 function displayMessage(text, type = 'info', container = mensagem) {
     container.textContent = text;
     container.className = type; // Pode ser 'info', 'error', 'success' para estilização
+}
+
+// New: Function to show past challenges
+async function showPastChallenges() {
+    pastChallengesContainer.style.display = 'block'; // Show the container
+    pastChallengesList.innerHTML = '<li>Carregando desafios anteriores...</li>'; // Loading message
+
+    try {
+        // Placeholder: This endpoint needs to be implemented in the backend
+        const response = await fetch(`${API_BASE_URL}/challenge/history`, {
+            headers: getHeadersForRoute(`${API_BASE_URL}/challenge/history`)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro ao buscar histórico de desafios: ${response.status}`);
+        }
+
+        const pastChallenges = await response.json();
+        pastChallengesList.innerHTML = ''; // Clear loading message
+
+        if (pastChallenges.length === 0) {
+            pastChallengesList.innerHTML = '<li>Nenhum desafio anterior encontrado.</li>';
+            return;
+        }
+
+        // Display challenges for the last 7 days
+        const today = new Date();
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+
+            const challengeForDay = pastChallenges.find(pc => pc.date === formattedDate);
+
+            const li = document.createElement('li');
+            const dateSpan = document.createElement('span');
+            dateSpan.textContent = formatDateWithoutTimezone(formattedDate);
+            li.appendChild(dateSpan);
+
+            if (challengeForDay) {
+                const statusSpan = document.createElement('span');
+                statusSpan.textContent = challengeForDay.completedByUser ? `Status: Concluído (Resposta: ${challengeForDay.challengeAnswerIfCompleted})` : 'Status: Não Concluído';
+                statusSpan.style.color = challengeForDay.completedByUser ? 'lightgreen' : 'orange';
+                li.appendChild(statusSpan);
+
+                const viewButton = document.createElement('button');
+                viewButton.textContent = 'Ver Desafio';
+                viewButton.onclick = () => {
+                    // Assuming fetchDailyChallenge can take a date parameter or we have a new fetchChallengeByDate
+                    fetchChallengeByDate(formattedDate); // Placeholder function
+                    closeModal(); // Close the profile modal
+                };
+                li.appendChild(viewButton);
+            } else {
+                const statusSpan = document.createElement('span');
+                statusSpan.textContent = 'Status: N/A';
+                statusSpan.style.color = 'gray';
+                li.appendChild(statusSpan);
+            }
+            pastChallengesList.appendChild(li);
+        }
+
+    } catch (error) {
+        console.error("Erro ao carregar desafios anteriores:", error);
+        pastChallengesList.innerHTML = '<li>Erro ao carregar desafios anteriores.</li>';
+    }
 }
