@@ -540,6 +540,41 @@ function handleInputChange() {
     }
 }
 
+async function handleInputChange() {
+    const input = inputJogo.value.trim().toLowerCase();
+    suggestionsDatalist.innerHTML = '';
+
+    if (input.length < 1) {
+        return;
+    }
+
+    const potentialCartoonAnswers = [
+        "Avatar: A Lenda de Aang", "Apenas um Show", "As Meninas Superpoderosas", "Ben 10",
+        "Bob Esponja Calça Quadrada", "Caverna do Dragão", "Corrida Maluca", "Du, Dudu e Edu",
+        "O Incrível Mundo de Gumball", "Os Simpsons", "Hora de Aventura", "Tom e Jerry",
+        "Pernalonga", "Os Flintstones", "Looney Tunes", "Scooby-Doo", "Dragon Ball Z",
+        "Pokémon", "Naruto", "Steven Universo", "Rick e Morty", "Gravity Falls",
+        "Star vs. as Forças do Mal", "Kim Possible", "Phineas e Ferb", "A Família Addams",
+        "Batman: A Série Animada", "Superman: A Série Animada", "Liga da Justiça",
+        "X-Men: Evolution", "DuckTales", "Animaniacs", "Pinky e o Cérebro",
+        "Hey Arnold!", "Rugrats", "A Turma da Mônica", "Jem e as Hologramas",
+        "She-Ra: A Princesa do Poder", "He-Man e os Mestres do Universo", "ThunderCats",
+        "Cavaleiros do Zodíaco", "Sailor Moon", "Digimon", "Yu-Gi-Oh!",
+        "As Aventuras de Jackie Chan", "Coragem, o Cão Covarde", "Laboratório de Dexter",
+        "A Vaca e o Frango"
+    ];
+
+    const filteredSuggestions = potentialCartoonAnswers.filter(cartoon =>
+        cartoon.toLowerCase().includes(input)
+    );
+
+    filteredSuggestions.forEach(suggestion => {
+        const option = document.createElement('option');
+        option.value = suggestion;
+        suggestionsDatalist.appendChild(option);
+    });
+}
+
 async function fetchWeeklyRanking() {
     try {
         const response = await fetch(`${API_BASE_URL}/ranking/weekly`, {
