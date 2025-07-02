@@ -1,67 +1,158 @@
-body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column; /* Changed to column to accommodate header */
-    justify-content: flex-start; /* Align to top */
-    align-items: center;
-    min-height: 100vh; /* Use min-height for full page, allow content to extend */
+/* RESET */
+* {
+    box-sizing: border-box;
     margin: 0;
-    background-color: #331F19;
-    color: #F4F0EA; /* Default text color for body */
+    padding: 0;
 }
 
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0e0e10;
+    color: #ffffff;
+    min-height: 10vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* HEADER */
 .main-header {
     width: 100%;
-    background-color: #CBBBA7;
-    padding: 10px 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    justify-content: flex-end; /* Align user profile to the right */
+    background-color: #1f1f23;
+    padding: 20px;
+    display: flex; 
+    justify-content: space-between; 
     align-items: center;
-    color: #331F19;
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #ffffff;
+    border-bottom: 2px solid #2c2c2e;
+}
+
+.main-header h1 {
+    flex-grow: 1;
+    text-align: center; 
 }
 
 .user-profile {
-    font-weight: bold;
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
 }
 
-.user-profile button {
-    background-color: #798252;
-    color: #F4F0EA;
-    padding: 8px 15px;
+/* CONTAINER */
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 30px;
+    max-width: 1200px;
+    margin: 40px 20px;
+}
+
+/* GAME PANEL */
+.game {
+    flex: 1;
+    max-width: 700px;
+    background-color: #1f1f23;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+    text-align: center;
+}
+
+/* IMAGE */
+#imagemDoJogo {
+    width: 100%;
+    max-width: 600px;
+    border-radius: 10px;
+    margin: 20px auto;
+    display: block;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+}
+
+/* INPUT & BUTTON */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px;
+    margin-top: 15px;
+    font-size: 1em;
+    border-radius: 8px;
     border: none;
-    border-radius: 5px;
+    background-color: #2a2a2e;
+    color: white;
+}
+
+button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 15px;
+    font-size: 1em;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 0.9em;
     transition: background-color 0.3s ease;
 }
 
-.user-profile button:hover {
-    background-color: #CCD595;
-    color: #504e4d;
+button:hover {
+    background-color: #2563eb;
 }
 
-.container {
+/* LINK-BUTTON (parece link, mas é botão) */
+.link-button {
+    background: none;
+    border: none;
+    color: #60a5fa;
+    text-decoration: underline;
+    font-size: 0.9em;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 8px;
+}
+
+.link-button:hover {
+    color: #93c5fd;
+}
+
+/* FRAME NAVIGATION */
+.frame-navigation {
+    margin-top: 20px;
     display: flex;
-    width: 90%;
-    max-width: 1200px;
-    margin-top: 20px; /* Space from header */
-    gap: 20px;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
+.frame-navigation button {
+    background-color: #4b5563;
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+}
+
+.frame-navigation button:hover {
+    background-color: #6b7280;
+}
+
+/* RANKING */
 .ranking-sidebar {
-    flex: 1;
-    background-color: #CBBBA7;
+    background-color: #1a1a1d;
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border: 2px solid #8B7D70;
-    color: #331F19;
+    border-radius: 10px;
+    color: white;
+    max-width: 300px;
+    font-size: 0.95em;
 }
 
 .ranking-sidebar h2 {
-    color: #331F19;
-    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
 }
 
 .ranking-sidebar ul {
@@ -70,111 +161,13 @@ body {
 }
 
 .ranking-sidebar li {
-    background-color: #F4F0EA;
-    color: #331F19;
-    padding: 8px;
-    margin-bottom: 5px;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.game {
-    flex: 3; /* Take more space */
-    text-align: center;
-    background-color: #CBBBA7;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border: 2px solid #8B7D70;
-    color: #331F19;
-}
-
-h1 {
-    color: #331F19;
-}
-
-p {
-    color: #331F19;
-    font-size: 1.1em;
-}
-
-.mensagem.erro {
-    color: #A34743; /* Cor para mensagens de erro */
-    font-weight: bold;
-}
-
-.mensagem.sucesso {
-    color: #28A745; /* Cor para mensagens de sucesso */
-    font-weight: bold;
-}
-
-.mensagem.info {
-    color: #331F19; /* Cor para mensagens informativas ou neutras */
-    font-weight: normal;
-}
-
-
-button {
-    background-color: #798252;
-    color: #F4F0EA;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
-    transition: background-color 0.3s ease;
-    margin-top: 10px;
-}
-
-button:hover {
-    background-color: #CCD595;
-    color: #504e4d;
-}
-
-/* Estilo para botões que parecem links (ex: "Esqueceu sua senha?") */
-.link-button {
-    background: none;
-    border: none;
-    color: #798252; /* Cor de link */
-    padding: 0;
-    margin-top: 5px;
-    font-size: 0.9em;
-    text-decoration: underline;
-    cursor: pointer;
-    transition: color 0.3s ease;
-}
-
-.link-button:hover {
-    color: #504e4d;
-    background: none;
-}
-
-
-input[type="text"],
-input[type="email"],
-input[type="password"] {
+    background-color: #2a2a2e;
     padding: 10px;
-    border: 1px solid #8B7D70;
+    margin-bottom: 8px;
     border-radius: 5px;
-    width: calc(100% - 22px); /* Account for padding and border */
-    max-width: 300px;
-    margin-top: 15px;
-    font-size: 1em;
-    color: #331F19;
-    background-color: #F4F0EA;
 }
 
-/* Ajuste para inputs dentro dos modais */
-.modal-content input[type="text"],
-.modal-content input[type="email"],
-.modal-content input[type="password"] {
-    width: calc(100% - 22px); /* Full width within modal content */
-    max-width: none; /* Remove max-width constraint for modal inputs */
-    margin-top: 0; /* Adjust margin if needed, usually managed by gap on form */
-    box-sizing: border-box; /* Include padding and border in the element's total width and height */
-}
-
-
+/* GERAL */
 ul {
     list-style: none;
     padding: 0;
@@ -182,119 +175,90 @@ ul {
 }
 
 ul li {
-    background-color: #F4F0EA;
-    color: #331F19;
+    background-color: #2a2a2e;
+    color: white;
     padding: 10px;
     margin: 5px 0;
     border-radius: 5px;
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.1); /* Adjusted shadow */
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.frame-navigation {
-    margin-top: 15px;
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap; /* Allow buttons to wrap */
+/* MENSAGENS */
+.mensagem.erro {
+    color: #f87171;
+    font-weight: bold;
 }
 
-.frame-navigation button {
-    background-color: #A34743;
-    color: #F4F0EA;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9em;
-    transition: background-color 0.3s ease;
-    margin: 0; /* Remove extra margin */
+.mensagem.sucesso {
+    color: #4ade80;
+    font-weight: bold;
 }
 
-.frame-navigation button:hover {
-    background-color: #60041A;
+.mensagem.info {
+    color: #d1d5db;
 }
 
-/* Modal Styles */
+/* MODAIS */
 .modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 1000; /* Sit on top, higher than other content */
-    left: 0;
-    top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.6); /* Black w/ more opacity */
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
     justify-content: center;
     align-items: center;
-    /* Adicionado para centralizar corretamente o modal com display: flex */
-    animation: fadeIn 0.3s ease-out; /* Adiciona uma animação simples */
+    animation: fadeIn 0.3s ease-out;
 }
 
 .modal-content {
-    background-color: #CBBBA7;
-    /* Removido 'margin: 15% auto;' para usar flexbox para centralização */
-    padding: 25px; /* Aumentado padding */
-    border: 1px solid #8B7D70;
-    border-radius: 10px; /* Borda mais arredondada */
-    width: 90%; /* Mais responsivo em telas pequenas */
-    max-width: 450px; /* Aumentado max-width */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Sombra mais pronunciada */
-    position: relative;
-    color: #331F19;
-    display: flex; /* Para centralizar os elementos internos facilmente */
+    background-color: #1f1f23;
+    padding: 30px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 6px 12px rgba(255, 255, 255, 0.1);
+    color: white;
+    display: flex;
     flex-direction: column;
-    gap: 15px; /* Espaçamento entre os elementos do modal */
-    animation: slideIn 0.3s ease-out; /* Adiciona uma animação de entrada */
-}
-
-.close-button {
-    color: #331F19;
-    position: absolute;
-    top: 12px; /* Ajuste a posição */
-    right: 15px; /* Ajuste a posição */
-    font-size: 30px; /* Tamanho maior */
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.close-button:hover,
-.close-button:focus {
-    color: black;
-    text-decoration: none;
+    gap: 15px;
+    position: relative;
+    animation: slideIn 0.3s ease-out;
 }
 
 .modal-content h2 {
-    color: #331F19;
     text-align: center;
-    margin-bottom: 15px; /* Ajustado para melhor espaçamento com o gap */
-    font-size: 1.8em; /* Fonte um pouco maior */
-}
-
-.modal-content form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px; /* Ajustado espaçamento */
+    font-size: 1.8em;
 }
 
 .modal-content label {
     font-weight: bold;
-    color: #504e4d; /* Cor um pouco mais escura para labels */
-    margin-bottom: -5px; /* Aproxima label do input */
+    color: #d1d5db;
 }
 
-/* Mensagens de erro/sucesso dentro dos modais */
 .modal-content .mensagem {
     text-align: center;
     margin-top: 10px;
     font-size: 0.95em;
-    min-height: 1.2em; /* Garante que o espaço seja reservado */
+    min-height: 1.2em;
 }
 
-/* Animações (Opcional, mas melhora a UX) */
+.close-button {
+    color: #ffffff;
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+.close-button:hover {
+    color: #f87171;
+}
+
+/* ANIMAÇÕES */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
