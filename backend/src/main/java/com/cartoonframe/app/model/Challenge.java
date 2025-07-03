@@ -79,5 +79,7 @@ public class Challenge {
         this.date = date;
     }
 
-
+    public void setChallengeAnswer(String challengeAnswer) {
+        this.challengeAnswer = challengeAnswer;
+    }
 }
