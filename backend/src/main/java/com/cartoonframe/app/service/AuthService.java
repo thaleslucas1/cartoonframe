@@ -129,6 +129,7 @@ public class AuthService {
         dto.email = user.getEmail();
         dto.nickname = user.getNickname();
         dto.score = user.getScore();
+        dto.role = user.getRole();
         return dto;
     }
 }
