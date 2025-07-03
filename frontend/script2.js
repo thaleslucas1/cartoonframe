@@ -193,6 +193,8 @@ async function login(identifier, password) {
             await fetchDailyChallenge();
             closeModal();
             displayMessage('', 'info');
+
+            location.reload();
         } else {
             displayMessage(data.message || "Credenciais inválidas. Verifique seu email/nickname e senha.", "error", loginMessage);
         }
@@ -225,6 +227,8 @@ async function register(name, nickname, email, password) {
             await fetchDailyChallenge();
             closeModal();
             displayMessage('', 'info', registerMessage);
+
+            location.reload();
         } else {
             displayMessage(data.message || "Erro ao registrar usuário. Tente outro email ou nickname.", "error", registerMessage);
         }
