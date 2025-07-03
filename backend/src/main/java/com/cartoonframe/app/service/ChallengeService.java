@@ -14,6 +14,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 
@@ -126,7 +127,9 @@ public class ChallengeService {
         guess.setPlayerGuess(guessDTO.guess);
         guess.setGuessOrder(totalGuesses);
         guess.setCorrect(isCorrect);
-        guess.setDesafio(challenge);
+        guess.setChallenge(challenge);
+        guess.setCreatedAt(LocalDateTime.now());
+
 
         System.out.println("Tentativa recebida: " + guessDTO.guess);
         System.out.println("Ordem da tentativa: " + totalGuesses);
