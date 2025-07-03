@@ -637,6 +637,7 @@ async function fetchWeeklyRanking() {
         const response = await fetch(`${API_BASE_URL}/ranking/weekly`, {
             headers: getHeadersForRoute(`${API_BASE_URL}/ranking/weekly`)
         });
+
         if (!response.ok) throw new Error(`Erro HTTP! status: ${response.status}`);
 
         const ranking = await response.json();
@@ -644,7 +645,7 @@ async function fetchWeeklyRanking() {
 
         ranking.forEach((user, index) => {
             const li = document.createElement('li');
-            li.textContent = `${index + 1}. ${user.name || user.nickname || user.email} - Pontos: ${user.points}`;
+            li.textContent = `${index + 1}. ${user.nickname} - Pontos: ${user.points}`;
             rankingListElement.appendChild(li);
         });
     } catch (error) {
