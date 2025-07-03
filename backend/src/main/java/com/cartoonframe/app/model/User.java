@@ -1,5 +1,6 @@
 package com.cartoonframe.app.model;
 
+import com.cartoonframe.app.model.enums.Role;
 import com.cartoonframe.app.model.enums.UserStatus;
 import jakarta.persistence.*;
 
@@ -38,6 +39,10 @@ public class User {
     @Column(nullable = false)
     private UserStatus userStatus;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Guess> guesses = new ArrayList<>();
 
@@ -47,6 +52,10 @@ public class User {
     }
 
     //getters
+
+    public Role getRole() {
+        return role;
+    }
 
     public String getId() {
         return id;
@@ -85,6 +94,10 @@ public class User {
     }
 
     //setters
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
     public void setEmail(String email) {
         this.email = email;
