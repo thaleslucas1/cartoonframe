@@ -7,6 +7,7 @@ import com.cartoonframe.app.dto.UserSummaryDTO;
 import com.cartoonframe.app.infra.security.TokenService;
 import com.cartoonframe.app.model.User;
 import com.cartoonframe.app.model.VerifierUser;
+import com.cartoonframe.app.model.enums.Role;
 import com.cartoonframe.app.model.enums.UserStatus;
 import com.cartoonframe.app.repository.UserRepository;
 import com.cartoonframe.app.repository.VerifierUserRepository;
@@ -49,7 +50,7 @@ public class AuthService {
         }
 
         String token = tokenService.generateToken(user);
-        return new ResponseDTO(user.getName(), token);
+        return new ResponseDTO(user.getName(), token, user.getRole().name());
     }
 
     public UserSummaryDTO register(RegisterRequestDTO dto) {
@@ -66,6 +67,7 @@ public class AuthService {
         }
 
         User newUser = new User();
+        newUser.setRole(Role.USER);
         newUser.setName(dto.name());
         newUser.setEmail(dto.email());
         newUser.setNickname(dto.nickname());
