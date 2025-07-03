@@ -2,6 +2,8 @@ package com.cartoonframe.app.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 public class Guess {
 
@@ -28,6 +30,9 @@ public class Guess {
     @Column(name = "session_id")
     private String sessionId;
 
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
     //construtores
 
     public Guess() {
@@ -42,11 +47,15 @@ public class Guess {
 
     //getters
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
     public long getId() {
         return id;
     }
 
-    public Challenge getDesafio() {
+    public Challenge getChallenge() {
         return challenge;
     }
 
@@ -72,6 +81,9 @@ public class Guess {
 
     //setters
 
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 
     public void setPlayerGuess(String playerGuess) {
         this.playerGuess = playerGuess;
@@ -85,10 +97,9 @@ public class Guess {
         this.isCorrect = correct;
     }
 
-    public void setDesafio(Challenge challenge) {
+    public void setChallenge(Challenge challenge) {
         this.challenge = challenge;
     }
-
     public void setUser(User user) {
         this.user = user;
     }
