@@ -87,6 +87,58 @@ public class ChallengeService {
     }
 
     @Transactional
+    public ChallengeDTO getChallengeByDate(LocalDate date, User user, String sessionId) {
+        Challenge challenge = challengeRepository.findByDate(date)
+                .orElseThrow(() -> new RuntimeException("Desafio não encontrado para a data: " + date));
+
+        List<Guess> userGuesses = challenge.getGuesses().stream()
+                .filter(g -> {
+                    if (user != null) {
+                        return g.getUser() != null && g.getUser().getId().equals(user.getId());
+                    } else {
+                        return g.getUser() == null
+                                && g.getSessionId() != null
+                                && !g.getSessionId().isBlank()
+                                && g.getSessionId().equals(sessionId);
+                    }
+                })
+                .sorted(Comparator.comparingInt(Guess::getGuessOrder))
+                .toList();
+
+        int totalGuesses = userGuesses.size();
+
+        boolean completed = userGuesses.stream().anyMatch(Guess::isCorrect) || userGuesses.size() >= 5;
+
+        int frameCountToShow;
+        if (completed) {
+            int correctGuessIndex = userGuesses.stream()
+                    .filter(Guess::isCorrect)
+                    .findFirst()
+                    .map(Guess::getGuessOrder)
+                    .orElse(totalGuesses - 1);
+
+            frameCountToShow = Math.min(correctGuessIndex + 1, challenge.getFrames().size());
+        } else {
+            frameCountToShow = Math.min(totalGuesses + 1, challenge.getFrames().size());
+        }
+
+        int remainingGuesses = 5 - totalGuesses;
+
+        ChallengeDTO dto = new ChallengeDTO();
+        dto.date = challenge.getDate();
+        dto.frames = challenge.getFrames().subList(0, frameCountToShow);
+        dto.remainingGuesses = remainingGuesses;
+        dto.isCompleted = completed;
+
+        if (completed) {
+            dto.challengeAnswer = challenge.getChallengeAnswer();
+        }
+
+        return dto;
+    }
+
+
+    @Transactional
     public AttemptResultDTO processChallenge(User user, String sessionId, GuessDTO guessDTO) {
         System.out.println("Usuário autenticado? " + (user != null ? user.getEmail() : "NÃO"));
         System.out.println("Session ID recebido: " + (sessionId != null ? sessionId : "NENHUM"));
@@ -190,5 +242,31 @@ public class ChallengeService {
             result.user = dto;
         }
         return result;
+    }
+
+    @Transactional
+    public List<ChallengeDTO> getLast7ChallengesForUser(User user) {
+        LocalDate today = LocalDate.now();
+        LocalDate sevenDaysAgo = today.minusDays(6);
+
+        List<Challenge> challenges = challengeRepository
+                .findByDateBetweenOrderByDateAsc(sevenDaysAgo, today);
+
+        return challenges.stream().map(challenge -> {
+            ChallengeDTO dto = new ChallengeDTO();
+
+            dto.date = challenge.getDate();
+            dto.frames = challenge.getFrames();
+            dto.challengeAnswer = challenge.getChallengeAnswer();
+
+            var userGuesses = challenge.getGuesses().stream()
+                    .filter(g -> g.getUser() != null && g.getUser().getId().equals(user.getId()))
+                    .toList();
+
+            dto.remainingGuesses = 5 - userGuesses.size(); // ajusta se o número de tentativas for diferente
+            dto.isCompleted = userGuesses.stream().anyMatch(Guess::isCorrect);
+
+            return dto;
+        }).toList();
     }
 }
