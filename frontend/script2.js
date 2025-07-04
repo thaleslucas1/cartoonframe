@@ -37,6 +37,7 @@ const forgotPasswordModal = document.getElementById('forgotPasswordModal');
 const resetCodeModal = document.getElementById('resetCodeModal');
 const newPasswordModal = document.getElementById('newPasswordModal');
 const userProfileModal = document.getElementById('userProfileModal'); // New: User Profile Modal
+const adminPageModal = document.getElementById('adminPage'); // Novo: Modal da Página do Admin
 
 // Forms
 const loginForm = document.getElementById('loginForm');
@@ -140,6 +141,9 @@ async function checkUserLoginStatus() {
             });
             if (response.ok) {
                 loggedInUser = await response.json();
+                // Store the user role from the backend response
+                localStorage.setItem('userRole', loggedInUser.role); // Usando loggedInUser.role
+                loggedInUser.role = loggedInUser.role; // Adiciona role ao objeto loggedInUser
                 displayUserProfile(loggedInUser.name || loggedInUser.nickname || loggedInUser.email);
             } else {
                 console.error("Falha ao buscar perfil do usuário, token inválido ou expirado. Status:", response.status);
@@ -155,14 +159,21 @@ async function checkUserLoginStatus() {
 }
 
 function displayUserProfile(nickname) {
-    userProfileDiv.innerHTML = `<span>${nickname}</span> <button onclick="showUserProfileModal()">Perfil</button>`;
+    let profileHtml = `<span>${nickname}</span> <button onclick="showUserProfileModal()">Perfil</button>`;
+    // Check for admin role and add admin button if applicable
+    if (loggedInUser && loggedInUser.role === 'A') { // Use loggedInUser.role here
+        profileHtml += ` <button onclick="showAdminPage()">Página do Admin</button>`;
+    }
+    userProfileDiv.innerHTML = profileHtml;
 }
+
 function displayLoginButton() {
     userProfileDiv.innerHTML = `<button onclick="showLogin()">Login</button>`;
 }
 
 function clearUserSession() {
     localStorage.removeItem('jwtToken');
+    localStorage.removeItem('userRole'); // Clear user role as well
     userToken = null;
     loggedInUser = null;
 
@@ -181,6 +192,7 @@ async function login(identifier, password) {
         const data = await response.json();
         if (response.ok) {
             localStorage.setItem('jwtToken', data.token);
+            localStorage.setItem('userRole', data.role); // Store the role
             userToken = data.token;
             if (data.sessionId) {
                 localStorage.setItem('sessionId', data.sessionId);
@@ -214,7 +226,8 @@ async function register(name, nickname, email, password) {
 
         const data = await response.json();
         if (response.ok) {
-            localStorage.setItem('jwtToken', data.token);
+            localStorage.setItem('jwtToken', data.token); // Assuming registration logs in automatically
+            localStorage.setItem('userRole', data.role); // Store the role upon registration
             userToken = data.token;
             if (data.sessionId) {
                 localStorage.setItem('sessionId', data.sessionId);
@@ -322,7 +335,8 @@ function showLogin() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // New: Hide user profile modal
+    userProfileModal.style.display = 'none'; // Hide user profile modal
+    adminPageModal.style.display = 'none'; // Hide admin page modal
     loginMessage.textContent = '';
     loginForm.reset();
 }
@@ -333,7 +347,8 @@ function showRegister() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // New: Hide user profile modal
+    userProfileModal.style.display = 'none'; // Hide user profile modal
+    adminPageModal.style.display = 'none'; // Hide admin page modal
     registerMessage.textContent = '';
     registerForm.reset();
 }
@@ -344,7 +359,8 @@ function showForgotPassword() {
     registerModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // New: Hide user profile modal
+    userProfileModal.style.display = 'none'; // Hide user profile modal
+    adminPageModal.style.display = 'none'; // Hide admin page modal
     forgotMessage.textContent = '';
     forgotPasswordForm.reset();
 }
@@ -354,7 +370,8 @@ function showResetCodeForm() {
     forgotPasswordModal.style.display = 'none';
     loginModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // New: Hide user profile modal
+    userProfileModal.style.display = 'none'; // Hide user profile modal
+    adminPageModal.style.display = 'none'; // Hide admin page modal
     resetCodeMessage.textContent = '';
     resetCodeForm.reset();
 }
@@ -363,7 +380,8 @@ function showNewPasswordForm() {
     newPasswordModal.style.display = 'flex';
     resetCodeModal.style.display = 'none';
     loginModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // New: Hide user profile modal
+    userProfileModal.style.display = 'none'; // Hide user profile modal
+    adminPageModal.style.display = 'none'; // Hide admin page modal
     newPasswordMessage.textContent = '';
     newPasswordForm.reset();
 }
@@ -383,12 +401,23 @@ function showUserProfileModal() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    userProfileModal.style.display = 'flex'; // New: Show user profile modal
+    adminPageModal.style.display = 'none'; // Hide admin page modal
+    userProfileModal.style.display = 'flex'; // Show user profile modal
 
     pastChallengesContainer.style.display = 'none'; // Hide past challenges by default
     pastChallengesList.innerHTML = ''; // Clear previous list
 }
 
+// Novo: Função para mostrar a página do Admin
+function showAdminPage() {
+    loginModal.style.display = 'none';
+    registerModal.style.display = 'none';
+    forgotPasswordModal.style.display = 'none';
+    resetCodeModal.style.display = 'none';
+    newPasswordModal.style.display = 'none';
+    userProfileModal.style.display = 'none';
+    adminPageModal.style.display = 'flex'; // Show admin page modal
+}
 
 function closeModal() {
     loginModal.style.display = 'none';
@@ -396,7 +425,8 @@ function closeModal() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // New: Hide user profile modal
+    userProfileModal.style.display = 'none'; // Hide user profile modal
+    adminPageModal.style.display = 'none'; // Hide admin page modal
 }
 
 // --- Listeners de submissão de formulários ---
@@ -637,14 +667,13 @@ async function fetchWeeklyRanking() {
         const response = await fetch(`${API_BASE_URL}/ranking/weekly`, {
             headers: getHeadersForRoute(`${API_BASE_URL}/ranking/weekly`)
         });
-
         if (!response.ok) throw new Error(`Erro HTTP! status: ${response.status}`);
 
         const ranking = await response.json();
         rankingListElement.innerHTML = '';
 
         ranking.forEach((user, index) => {
-            const li = document.createElement('li');
+            const li = document.createElement('li'); // Correção de lli para li
             li.textContent = `${index + 1}. ${user.nickname} - Pontos: ${user.points}`;
             rankingListElement.appendChild(li);
         });
@@ -692,7 +721,7 @@ async function showPastChallenges() {
         for (let i = 0; i < 7; i++) {
             const date = new Date(today);
             date.setDate(today.getDate() - i);
-            const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            const formattedDate = date.toISOString().split('T')[0]; //YYYY-MM-DD
 
             const challengeForDay = pastChallenges.find(pc => pc.date === formattedDate);
 
