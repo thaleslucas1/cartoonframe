@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/challenge")
@@ -38,6 +40,18 @@ public class ChallengeController {
         return ResponseEntity.ok(challengeService.getDailyChallenge(user, sessionId));
     }
 
+    @GetMapping("/by-date/{date}")
+    public ResponseEntity<ChallengeDTO> getChallengeByDate(
+            @PathVariable String date,
+            @AuthenticationPrincipal User user,
+            @RequestHeader(value = "X-Session-ID", required = false) String sessionId
+    ) {
+        LocalDate parsedDate = LocalDate.parse(date);
+        ChallengeDTO challengeDTO = challengeService.getChallengeByDate(parsedDate, user, sessionId);
+        return ResponseEntity.ok(challengeDTO);
+    }
+
+
     @PostMapping("/try")
     public ResponseEntity<?> guess(
             @RequestBody GuessDTO guessDTO,
@@ -54,5 +68,13 @@ public class ChallengeController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<List<ChallengeDTO>> getChallengeHistory(@AuthenticationPrincipal User user) {
+        if (user == null) return ResponseEntity.status(401).build();
+
+        List<ChallengeDTO> challengeHistory = challengeService.getLast7ChallengesForUser(user);
+        return ResponseEntity.ok(challengeHistory);
     }
 }
