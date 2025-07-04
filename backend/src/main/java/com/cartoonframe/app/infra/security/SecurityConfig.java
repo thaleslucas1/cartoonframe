@@ -39,7 +39,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/api/challenge/**").permitAll()
+                        .requestMatchers("/api/challenge/history").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/challenge/today").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/challenge/try").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/ranking/weekly/**").permitAll()
