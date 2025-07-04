@@ -1,6 +1,7 @@
 package com.cartoonframe.app.repository;
 
 import com.cartoonframe.app.model.Guess;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
