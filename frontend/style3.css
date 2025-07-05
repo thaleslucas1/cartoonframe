@@ -201,6 +201,7 @@ ul li {
 }
 
 /* MODAIS */
+/* MODAIS */
 .modal {
     display: none;
     position: fixed;
@@ -226,6 +227,9 @@ ul li {
     gap: 15px;
     position: relative;
     animation: slideIn 0.3s ease-out;
+    /* ADICIONE ESTAS DUAS LINHAS: */
+    max-height: 90vh; /* Limita a altura do modal a 90% da altura da tela */
+    overflow-y: auto; /* Adiciona barra de rolagem vertical se o conteúdo exceder o max-height */
 }
 
 .modal-content h2 {
@@ -267,4 +271,28 @@ ul li {
 @keyframes slideIn {
     from { transform: translateY(-30px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-content h3 {
+    margin-top: 20px; /* Adiciona um espaço acima do título */
+    margin-bottom: 10px; /* Adiciona um espaço abaixo do título */
+    color: #d1d5db; /* Cor para o título */
+}
+
+/* Opcional: Se quiser um estilo mais específico para as labels dentro de formulários de modal */
+.modal-content form label {
+    margin-top: 10px; /* Espaço acima de cada label */
+    margin-bottom: 5px; /* Espaço abaixo de cada label */
+    display: block; /* Para que cada label ocupe sua própria linha */
+}
+
+/* Já existe, mas reforça a aplicação para a nova mensagem */
+.mensagem.erro {
+    color: #f87171;
+    font-weight: bold;
+}
+
+.mensagem.sucesso {
+    color: #4ade80;
+    font-weight: bold;
 }
