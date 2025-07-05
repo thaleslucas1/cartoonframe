@@ -74,6 +74,7 @@ public class ChallengeService {
         int remainingGuesses = 5 - totalGuesses;
 
         ChallengeDTO dto = new ChallengeDTO();
+        dto.id = challenge.getId(); // <--- ADD THIS LINE
         dto.date = challenge.getDate();
         dto.frames = challenge.getFrames().subList(0, frameCountToShow);
         dto.remainingGuesses = remainingGuesses;
@@ -125,6 +126,7 @@ public class ChallengeService {
         int remainingGuesses = 5 - totalGuesses;
 
         ChallengeDTO dto = new ChallengeDTO();
+        dto.id = challenge.getId(); // <--- ADD THIS LINE
         dto.date = challenge.getDate();
         dto.frames = challenge.getFrames().subList(0, frameCountToShow);
         dto.remainingGuesses = remainingGuesses;
@@ -137,14 +139,20 @@ public class ChallengeService {
         return dto;
     }
 
-
     @Transactional
-    public AttemptResultDTO processChallenge(User user, String sessionId, GuessDTO guessDTO) {
+    public AttemptResultDTO processChallenge(User user, String sessionId, String guess, Long challengeId) {
         System.out.println("Usuário autenticado? " + (user != null ? user.getEmail() : "NÃO"));
         System.out.println("Session ID recebido: " + (sessionId != null ? sessionId : "NENHUM"));
 
-        Challenge challenge = challengeRepository.findByDate(LocalDate.now())
-                .orElseThrow(() -> new RuntimeException("Desafio de hoje não foi encontrado"));
+        Challenge challenge;
+        if (challengeId != null) {
+            challenge = challengeRepository.findById(challengeId)
+                    .orElseThrow(() -> new RuntimeException("Desafio não encontrado para o ID: " + challengeId));
+        } else {
+            challenge = challengeRepository.findByDate(LocalDate.now())
+                    .orElseThrow(() -> new RuntimeException("Desafio de hoje não foi encontrado"));
+        }
+
 
         List<Guess> userGuesses = challenge.getGuesses().stream()
                 .filter(g -> {
@@ -173,32 +181,32 @@ public class ChallengeService {
             throw new RuntimeException("Número máximo de tentativas atingido.");
         }
 
-        boolean isCorrect = challenge.getChallengeAnswer().equalsIgnoreCase(guessDTO.guess);
+        boolean isCorrect = challenge.getChallengeAnswer().equalsIgnoreCase(guess);
 
-        Guess guess = new Guess();
-        guess.setPlayerGuess(guessDTO.guess);
-        guess.setGuessOrder(totalGuesses);
-        guess.setCorrect(isCorrect);
-        guess.setChallenge(challenge);
-        guess.setCreatedAt(LocalDateTime.now());
+        Guess newGuess = new Guess();
+        newGuess.setPlayerGuess(guess);
+        newGuess.setGuessOrder(totalGuesses);
+        newGuess.setCorrect(isCorrect);
+        newGuess.setChallenge(challenge);
+        newGuess.setCreatedAt(LocalDateTime.now());
 
 
-        System.out.println("Tentativa recebida: " + guessDTO.guess);
+        System.out.println("Tentativa recebida: " + guess);
         System.out.println("Ordem da tentativa: " + totalGuesses);
         System.out.println("É correta? " + isCorrect);
 
         if (user != null) {
-            guess.setUser(user);
+            newGuess.setUser(user);
             System.out.println("Tentativa associada ao usuário: " + user.getEmail());
         } else if (sessionId != null && !sessionId.isBlank()) {
-            guess.setSessionId(sessionId);
+            newGuess.setSessionId(sessionId);
             System.out.println("Tentativa associada à sessionId: " + sessionId);
         } else {
             System.out.println("ERRO: Tentativa sem usuário e sem sessionId.");
             throw new RuntimeException("Usuário não autenticado e sessionId ausente.");
         }
 
-        guessesRepository.save(guess);
+        guessesRepository.save(newGuess);
 
         totalGuesses++;
 
@@ -255,6 +263,7 @@ public class ChallengeService {
         return challenges.stream().map(challenge -> {
             ChallengeDTO dto = new ChallengeDTO();
 
+            dto.id = challenge.getId(); // <--- ADD THIS LINE
             dto.date = challenge.getDate();
             dto.frames = challenge.getFrames();
             dto.challengeAnswer = challenge.getChallengeAnswer();
@@ -263,7 +272,7 @@ public class ChallengeService {
                     .filter(g -> g.getUser() != null && g.getUser().getId().equals(user.getId()))
                     .toList();
 
-            dto.remainingGuesses = 5 - userGuesses.size(); // ajusta se o número de tentativas for diferente
+            dto.remainingGuesses = 5 - userGuesses.size();
             dto.isCompleted = userGuesses.stream().anyMatch(Guess::isCorrect);
 
             return dto;

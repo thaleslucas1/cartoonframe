@@ -63,7 +63,7 @@ public class ChallengeController {
         System.out.println("[CHALLENGE] Sessão: " + sessionId);
 
         try {
-            AttemptResultDTO result = challengeService.processChallenge(user, sessionId, guessDTO);
+            AttemptResultDTO result = challengeService.processChallenge(user, sessionId, guessDTO.guess, guessDTO.challengeId); // <--- MODIFIED LINE
             return ResponseEntity.ok(result);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

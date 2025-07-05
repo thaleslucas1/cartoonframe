@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public class ChallengeDTO {
+    public Long id;
     public LocalDate date;
     public List<String> frames;
     public int remainingGuesses;
