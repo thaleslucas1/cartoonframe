@@ -6,7 +6,6 @@ import com.cartoonframe.app.repository.ChallengeRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -29,10 +28,6 @@ public class AdminChallengeService {
 
         if (releaseDate == null) {
             throw new IllegalArgumentException("Data de exibição é obrigatória.");
-        }
-
-        if (releaseDate.isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("Não é possível programar desafio para data passada.");
         }
 
         if (correctAnswer == null || correctAnswer.trim().isEmpty()) {
