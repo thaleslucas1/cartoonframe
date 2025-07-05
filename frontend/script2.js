@@ -800,28 +800,36 @@ async function showPastChallenges() {
             dateSpan.textContent = formatDateWithoutTimezone(formattedDate);
             li.appendChild(dateSpan);
 
-            if (challengeForDay) {
-                const statusSpan = document.createElement('span');
-                const completed = challengeForDay.isCompleted;
-                statusSpan.textContent = completed
-                    ? `Status: Concluído (Resposta: ${challengeForDay.challengeAnswer ?? '---'})`
-                    : 'Status: Não Concluído';
-                statusSpan.style.color = completed ? 'lightgreen' : 'orange';
-                li.appendChild(statusSpan);
+        if (challengeForDay) {
+            const statusSpan = document.createElement('span');
+            const completedSuccessfully = challengeForDay.isCompleted; // true se acertou
+            const allGuessesUsed = challengeForDay.remainingGuesses === 0; // true se usou todas as 5 tentativas
 
-                const viewButton = document.createElement('button');
-                viewButton.textContent = 'Ver Desafio';
-                viewButton.onclick = () => {
-                    fetchChallengeByDate(formattedDate);
-                    closeModal();
-                };
-                li.appendChild(viewButton);
-            } else {
-                const statusSpan = document.createElement('span');
-                statusSpan.textContent = 'Status: N/A';
-                statusSpan.style.color = 'gray';
-                li.appendChild(statusSpan);
+            if (completedSuccessfully) {
+                statusSpan.textContent = `Status: Concluído (Resposta: ${challengeForDay.challengeAnswer ?? '---'})`;
+                statusSpan.style.color = 'lightgreen';
+            } else if (allGuessesUsed) { // Se não acertou E usou todas as tentativas
+                statusSpan.textContent = 'Status: Desafio Concluído: Você Errou'; // <--- NOVO STATUS
+                statusSpan.style.color = 'salmon'; // Uma cor para indicar "errou"
+            } else { // Se não acertou E ainda tem tentativas
+                statusSpan.textContent = 'Status: Não Concluído';
+                statusSpan.style.color = 'orange';
             }
+            li.appendChild(statusSpan);
+
+            const viewButton = document.createElement('button');
+            viewButton.textContent = 'Ver Desafio';
+            viewButton.onclick = () => {
+                fetchChallengeByDate(formattedDate);
+                closeModal();
+            };
+            li.appendChild(viewButton);
+        } else {
+            const statusSpan = document.createElement('span');
+            statusSpan.textContent = 'Status: N/A';
+            statusSpan.style.color = 'gray';
+            li.appendChild(statusSpan);
+        }
 
             pastChallengesList.appendChild(li);
         }
