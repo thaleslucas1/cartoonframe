@@ -201,6 +201,7 @@ ul li {
 }
 
 /* MODAIS */
+/* MODAIS */
 .modal {
     display: none;
     position: fixed;
@@ -226,6 +227,9 @@ ul li {
     gap: 15px;
     position: relative;
     animation: slideIn 0.3s ease-out;
+    /* ADICIONE ESTAS DUAS LINHAS: */
+    max-height: 90vh; /* Limita a altura do modal a 90% da altura da tela */
+    overflow-y: auto; /* Adiciona barra de rolagem vertical se o conteúdo exceder o max-height */
 }
 
 .modal-content h2 {
