@@ -408,8 +408,12 @@ function showUserProfileModal() {
     pastChallengesList.innerHTML = ''; // Clear previous list
 }
 
-// Novo: Função para mostrar a página do Admin
 function showAdminPage() {
+    // Check if the user has admin role before showing the page
+    if (!loggedInUser || loggedInUser.role !== 'A') {
+        alert("Acesso negado. Esta página é apenas para administradores.");
+        return;
+    }
     loginModal.style.display = 'none';
     registerModal.style.display = 'none';
     forgotPasswordModal.style.display = 'none';
@@ -417,7 +421,10 @@ function showAdminPage() {
     newPasswordModal.style.display = 'none';
     userProfileModal.style.display = 'none';
     adminPageModal.style.display = 'flex'; // Show admin page modal
+    createChallengeMessage.textContent = ''; // Clear any previous messages
+    createChallengeForm.reset(); // Reset form fields
 }
+
 
 function closeModal() {
     loginModal.style.display = 'none';
@@ -465,6 +472,43 @@ newPasswordForm.addEventListener('submit', (e) => {
     resetPassword(newPassword, confirmNewPassword);
 });
 
+// Novo: Listener para o formulário de criação de desafio
+createChallengeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const imageUrlsInput = document.getElementById('challengeImageUrls').value;
+    const correctAnswer = document.getElementById('challengeCorrectAnswer').value;
+    const releaseDate = document.getElementById('challengeReleaseDate').value;
+
+    const imageUrls = imageUrlsInput.split(',').map(url => url.trim()).filter(url => url !== '');
+
+    if (!userToken || loggedInUser.role !== 'A') {
+        displayMessage("Erro: Você não tem permissão para criar desafios.", "error", createChallengeMessage);
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/challenges`, {
+            method: 'POST',
+            headers: getHeadersForRoute(`${API_BASE_URL}/admin/challenges`, true),
+            body: JSON.stringify({
+                imageUrls: imageUrls,
+                correctAnswer: correctAnswer,
+                releaseDate: releaseDate
+            })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            displayMessage("Desafio criado com sucesso!", "success", createChallengeMessage);
+            createChallengeForm.reset();
+        } else {
+            displayMessage(data.message || "Erro ao criar desafio. Verifique os dados.", "error", createChallengeMessage);
+        }
+    } catch (error) {
+        console.error("Erro ao criar desafio:", error);
+        displayMessage("Erro ao conectar com o servidor. Tente novamente mais tarde.", "error", createChallengeMessage);
+    }
+});
 // --- Lógica de Jogo (Imagens e Botões) ---
 
 async function fetchDailyChallenge() {
@@ -472,31 +516,11 @@ async function fetchDailyChallenge() {
         const response = await fetch(`${API_BASE_URL}/challenge/today`, {
             headers: getHeadersForRoute(`${API_BASE_URL}/challenge/today`)
         });
+
         if (!response.ok) throw new Error(`Erro HTTP! status: ${response.status}`);
 
-        currentChallenge = await response.json();
-
-        challengeDateElement.textContent = `Desafio de ${formatDateWithoutTimezone(currentChallenge.date)}`;
-
-        // Atualiza imagem para o último frame revelado
-        const lastFrameIndex = currentChallenge.frames.length - 1;
-        imagemElement.src = currentChallenge.frames[lastFrameIndex];
-
-        remainingGuessesElement.textContent = `Tentativas restantes: ${currentChallenge.remainingGuesses}`;
-
-        // Se o desafio estiver completo, exibe a resposta correta e desabilita input
-        if (currentChallenge.isCompleted) {
-            displayMessage(`O desafio terminou! Resposta: ${currentChallenge.challengeAnswer}`, "info");
-            inputJogo.disabled = true;
-            document.querySelector('.game button').disabled = true;
-        } else {
-            displayMessage('', 'info');
-            inputJogo.disabled = false;
-            document.querySelector('.game button').disabled = false;
-        }
-
-        renderFrameButtons(currentChallenge.frames.length);
-        listaJogos.innerHTML = ''; // Se quiser, pode restaurar palpites salvos também
+        const challenge = await response.json();
+        renderChallenge(challenge);
 
     } catch (error) {
         console.error("Erro ao buscar o desafio diário:", error);
@@ -506,21 +530,65 @@ async function fetchDailyChallenge() {
     }
 }
 
-// Function to fetch a challenge by date (placeholder for now)
-async function fetchChallengeByDate(date) {
-    // This will require a new backend endpoint or modification of existing /today endpoint
-    // For now, let's just log and simulate fetching if needed for testing frontend navigation
-    console.log(`Fetching challenge for date: ${date}. (Backend endpoint not implemented yet)`);
-    // Example: fetch(`${API_BASE_URL}/challenge/byDate?date=${date}`, ...)
-    displayMessage(`Carregando desafio para ${formatDateWithoutTimezone(date)}... (Funcionalidade de backend pendente)`, 'info');
+function renderChallenge(challenge) {
+    currentChallenge = challenge;
+
+    challengeDateElement.textContent = `Desafio de ${formatDateWithoutTimezone(challenge.date)}`;
+
+    const lastFrameIndex = challenge.frames.length - 1;
+    imagemElement.src = challenge.frames[lastFrameIndex];
+
+    remainingGuessesElement.textContent = `Tentativas restantes: ${challenge.remainingGuesses}`;
+
+    if (challenge.isCompleted) {
+        displayMessage(`O desafio terminou! Resposta: ${challenge.challengeAnswer}`, "info");
+        inputJogo.disabled = true;
+        document.querySelector('.game button').disabled = true;
+    } else {
+        displayMessage('', 'info');
+        inputJogo.disabled = false;
+        document.querySelector('.game button').disabled = false;
+    }
+
+    renderFrameButtons(challenge.frames.length);
+    listaJogos.innerHTML = '';
 }
 
+
+// Function to fetch a challenge by date (placeholder for now)
+async function fetchChallengeByDate(date) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/challenge/by-date/${date}`, {
+            headers: getHeadersForRoute(`${API_BASE_URL}/challenge/by-date/${date}`)
+        });
+
+        if (!response.ok) throw new Error(`Erro HTTP! status: ${response.status}`);
+
+        const challenge = await response.json();
+        renderChallenge(challenge);
+
+    } catch (error) {
+        console.error("Erro ao buscar desafio por data:", error);
+        displayMessage("Erro ao carregar o desafio selecionado.", "error");
+    }
+}
+
+
+// ... (código anterior) ...
 
 async function submitGuess() {
     console.log("[IMAGEM LOG] Início de submitGuess.");
     const guess = inputJogo.value.trim();
     if (guess === "") {
         displayMessage("Por favor, digite um palpite!", "error");
+        return;
+    }
+
+    // Certifica-se de que currentChallenge está definido e possui um ID.
+    // Esta validação é crucial agora que esperamos o ID.
+    if (!currentChallenge || currentChallenge.id === undefined || currentChallenge.id === null) {
+        displayMessage("Erro: Desafio não carregado corretamente (ID ausente). Tente recarregar a página.", "error");
+        console.error("currentChallenge.id é undefined ou null. Objeto currentChallenge:", currentChallenge);
         return;
     }
 
@@ -534,7 +602,10 @@ async function submitGuess() {
         const response = await fetch(`${API_BASE_URL}/challenge/try`, {
             method: 'POST',
             headers: requestHeaders,
-            body: JSON.stringify({ guess: guess })
+            body: JSON.stringify({
+                guess: guess,
+                challengeId: currentChallenge.id // <--- Esta linha já havia sido sugerida.
+            })
         });
 
         if (response.status === 400) {
@@ -584,10 +655,10 @@ async function submitGuess() {
         renderFrameButtons(currentChallenge.frames.length);
         inputJogo.value = '';
 
-        // New: Update user score in the profile if applicable
+        // Atualizar pontuação do usuário no perfil, se aplicável
         if (loggedInUser && result.user && result.user.score !== undefined) {
             loggedInUser.score = result.user.score;
-            profileScoreElement.textContent = loggedInUser.score; // Update score in modal if open
+            profileScoreElement.textContent = loggedInUser.score;
         }
 
     } catch (error) {
@@ -597,7 +668,6 @@ async function submitGuess() {
         document.querySelector('.game button').disabled = false;
     }
 }
-
 
 function renderFrameButtons(totalFrames) {
     frameNavigation.innerHTML = '';
@@ -732,16 +802,18 @@ async function showPastChallenges() {
 
             if (challengeForDay) {
                 const statusSpan = document.createElement('span');
-                statusSpan.textContent = challengeForDay.completedByUser ? `Status: Concluído (Resposta: ${challengeForDay.challengeAnswerIfCompleted})` : 'Status: Não Concluído';
-                statusSpan.style.color = challengeForDay.completedByUser ? 'lightgreen' : 'orange';
+                const completed = challengeForDay.isCompleted;
+                statusSpan.textContent = completed
+                    ? `Status: Concluído (Resposta: ${challengeForDay.challengeAnswer ?? '---'})`
+                    : 'Status: Não Concluído';
+                statusSpan.style.color = completed ? 'lightgreen' : 'orange';
                 li.appendChild(statusSpan);
 
                 const viewButton = document.createElement('button');
                 viewButton.textContent = 'Ver Desafio';
                 viewButton.onclick = () => {
-                    // Assuming fetchDailyChallenge can take a date parameter or we have a new fetchChallengeByDate
-                    fetchChallengeByDate(formattedDate); // Placeholder function
-                    closeModal(); // Close the profile modal
+                    fetchChallengeByDate(formattedDate);
+                    closeModal();
                 };
                 li.appendChild(viewButton);
             } else {
@@ -750,6 +822,7 @@ async function showPastChallenges() {
                 statusSpan.style.color = 'gray';
                 li.appendChild(statusSpan);
             }
+
             pastChallengesList.appendChild(li);
         }
 
