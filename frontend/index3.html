@@ -138,7 +138,17 @@
             <span class="close-button" onclick="closeModal()">&times;</span>
             <h2>Página do Administrador</h2>
             <p>Bem-vindo à página de administração!</p>
-            <p>Conteúdo de administração será adicionado aqui.</p>
+            <h3>Criar Novo Desafio</h3>
+            <form id="createChallengeForm">
+                <label for="challengeImageUrls">URLs das Imagens (separadas por vírgula):</label>
+                <input type="text" id="challengeImageUrls" placeholder="url1,url2,url3" required>
+                <label for="challengeCorrectAnswer">Resposta Correta:</label>
+                <input type="text" id="challengeCorrectAnswer" required>
+                <label for="challengeReleaseDate">Data de Lançamento:</label>
+                <input type="date" id="challengeReleaseDate" required>
+                <button type="submit">Criar Desafio</button>
+                <p id="createChallengeMessage" class="mensagem"></p>
+            </form>
         </div>
     </div>
 
