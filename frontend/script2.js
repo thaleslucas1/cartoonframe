@@ -1,13 +1,14 @@
-const API_BASE_URL = 'http://localhost:8080/api'; // Ajuste se seu backend rodar em outra porta
-const AUTH_BASE_URL = 'http://localhost:8080/auth'; // Ajuste para autenticação
-const PASSWORD_RESET_BASE_URL = 'http://localhost:8080/password-reset'; // Novo endpoint para redefinição de senha
+const API_BASE_URL = 'http://localhost:8080/api'; 
+const AUTH_BASE_URL = 'http://localhost:8080/auth';
+const PASSWORD_RESET_BASE_URL = 'http://localhost:8080/password-reset'; 
 
+const sendButton = document.querySelector('.game button');
 let currentChallenge = null;
 let userToken = localStorage.getItem('jwtToken');
 let loggedInUser = null;
-let currentResetEmail = null; // Para armazenar o email durante o fluxo de redefinição de senha
+let currentResetEmail = null;
 
-let sessionId = localStorage.getItem('sessionId'); // Variável global para o Session ID
+let sessionId = localStorage.getItem('sessionId'); 
 
 function getSessionId() {
     let stored = localStorage.getItem('sessionId');
@@ -18,7 +19,6 @@ function getSessionId() {
     return stored;
 }
 
-// Elementos do DOM
 const imagemElement = document.getElementById("imagemDoJogo");
 const inputJogo = document.getElementById("inputJogo");
 const mensagem = document.getElementById("mensagem");
@@ -30,30 +30,26 @@ const challengeDateElement = document.getElementById("challengeDate");
 const rankingListElement = document.getElementById("rankingList");
 const suggestionsDatalist = document.getElementById('suggestions');
 
-// Modals
 const loginModal = document.getElementById('loginModal');
 const registerModal = document.getElementById('registerModal');
 const forgotPasswordModal = document.getElementById('forgotPasswordModal');
 const resetCodeModal = document.getElementById('resetCodeModal');
 const newPasswordModal = document.getElementById('newPasswordModal');
-const userProfileModal = document.getElementById('userProfileModal'); // New: User Profile Modal
-const adminPageModal = document.getElementById('adminPage'); // Novo: Modal da Página do Admin
+const userProfileModal = document.getElementById('userProfileModal'); 
+const adminPageModal = document.getElementById('adminPage'); 
 
-// Forms
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
 const forgotPasswordForm = document.getElementById('forgotPasswordForm');
 const resetCodeForm = document.getElementById('resetCodeForm');
 const newPasswordForm = document.getElementById('newPasswordForm');
 
-// Messages
 const loginMessage = document.getElementById('loginMessage');
 const registerMessage = document.getElementById('registerMessage');
 const forgotMessage = document.getElementById('forgotMessage');
 const resetCodeMessage = document.getElementById('resetCodeMessage');
 const newPasswordMessage = document.getElementById('newPasswordMessage');
 
-// New: User Profile Elements
 const profileNameElement = document.getElementById('profileName');
 const profileEmailElement = document.getElementById('profileEmail');
 const profileNicknameElement = document.getElementById('profileNickname');
@@ -62,11 +58,6 @@ const pastChallengesContainer = document.getElementById('pastChallengesContainer
 const pastChallengesList = document.getElementById('pastChallengesList');
 
 
-/**
- * Função para gerar um UUID (Identificador Único Universal) v4.
- * Usado para criar um Session ID único para usuários anônimos.
- * Fonte: https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid
- */
 function generateUuidv4() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -98,12 +89,9 @@ function getHeadersForRoute(fullRoute, isJson = false) {
         headers['Content-Type'] = 'application/json';
     }
 
-    // Se houver um JWT válido, sempre o envie
     if (userToken && userToken !== 'null' && userToken !== 'undefined') {
         headers['Authorization'] = `Bearer ${userToken}`;
     } else {
-        // Se NÃO houver JWT (usuário anônimo), mas houver um Session ID, envie-o.
-        // Isso é crucial para que o backend rastreie usuários anônimos em /challenge/today e /challenge/try
         if (sessionId) {
             headers['X-Session-ID'] = sessionId;
         }
@@ -111,9 +99,7 @@ function getHeadersForRoute(fullRoute, isJson = false) {
     return headers;
 }
 
-// Listeners de Eventos
 document.addEventListener('DOMContentLoaded', () => {
-    // Inicializa o Session ID para usuários anônimos
     if (!sessionId) {
         sessionId = generateUuidv4();
         localStorage.setItem('sessionId', sessionId);
@@ -141,9 +127,8 @@ async function checkUserLoginStatus() {
             });
             if (response.ok) {
                 loggedInUser = await response.json();
-                // Store the user role from the backend response
-                localStorage.setItem('userRole', loggedInUser.role); // Usando loggedInUser.role
-                loggedInUser.role = loggedInUser.role; // Adiciona role ao objeto loggedInUser
+                localStorage.setItem('userRole', loggedInUser.role); 
+                loggedInUser.role = loggedInUser.role; 
                 displayUserProfile(loggedInUser.name || loggedInUser.nickname || loggedInUser.email);
             } else {
                 console.error("Falha ao buscar perfil do usuário, token inválido ou expirado. Status:", response.status);
@@ -160,8 +145,8 @@ async function checkUserLoginStatus() {
 
 function displayUserProfile(nickname) {
     let profileHtml = `<span>${nickname}</span> <button onclick="showUserProfileModal()">Perfil</button>`;
-    // Check for admin role and add admin button if applicable
-    if (loggedInUser && loggedInUser.role === 'A') { // Use loggedInUser.role here
+
+    if (loggedInUser && loggedInUser.role === 'A') { 
         profileHtml += ` <button onclick="showAdminPage()">Página do Admin</button>`;
     }
     userProfileDiv.innerHTML = profileHtml;
@@ -173,7 +158,7 @@ function displayLoginButton() {
 
 function clearUserSession() {
     localStorage.removeItem('jwtToken');
-    localStorage.removeItem('userRole'); // Clear user role as well
+    localStorage.removeItem('userRole'); 
     userToken = null;
     loggedInUser = null;
 
@@ -192,7 +177,7 @@ async function login(identifier, password) {
         const data = await response.json();
         if (response.ok) {
             localStorage.setItem('jwtToken', data.token);
-            localStorage.setItem('userRole', data.role); // Store the role
+            localStorage.setItem('userRole', data.role); 
             userToken = data.token;
             if (data.sessionId) {
                 localStorage.setItem('sessionId', data.sessionId);
@@ -226,8 +211,8 @@ async function register(name, nickname, email, password) {
 
         const data = await response.json();
         if (response.ok) {
-            localStorage.setItem('jwtToken', data.token); // Assuming registration logs in automatically
-            localStorage.setItem('userRole', data.role); // Store the role upon registration
+            localStorage.setItem('jwtToken', data.token); 
+            localStorage.setItem('userRole', data.role); 
             userToken = data.token;
             if (data.sessionId) {
                 localStorage.setItem('sessionId', data.sessionId);
@@ -251,7 +236,6 @@ async function register(name, nickname, email, password) {
     }
 }
 
-// --- Funções para o fluxo de "Esqueceu a Senha" ---
 async function requestPasswordResetCode(email) {
     try {
         const response = await fetch(`${PASSWORD_RESET_BASE_URL}/request-code`, {
@@ -328,15 +312,14 @@ async function resetPassword(newPassword, confirmNewPassword) {
     }
 }
 
-// --- Funções de exibição de Modais ---
 function showLogin() {
     loginModal.style.display = 'flex';
     registerModal.style.display = 'none';
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // Hide user profile modal
-    adminPageModal.style.display = 'none'; // Hide admin page modal
+    userProfileModal.style.display = 'none'; 
+    adminPageModal.style.display = 'none'; 
     loginMessage.textContent = '';
     loginForm.reset();
 }
@@ -347,8 +330,8 @@ function showRegister() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // Hide user profile modal
-    adminPageModal.style.display = 'none'; // Hide admin page modal
+    userProfileModal.style.display = 'none'; 
+    adminPageModal.style.display = 'none'; 
     registerMessage.textContent = '';
     registerForm.reset();
 }
@@ -359,8 +342,8 @@ function showForgotPassword() {
     registerModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // Hide user profile modal
-    adminPageModal.style.display = 'none'; // Hide admin page modal
+    userProfileModal.style.display = 'none'; 
+    adminPageModal.style.display = 'none'; 
     forgotMessage.textContent = '';
     forgotPasswordForm.reset();
 }
@@ -370,8 +353,8 @@ function showResetCodeForm() {
     forgotPasswordModal.style.display = 'none';
     loginModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // Hide user profile modal
-    adminPageModal.style.display = 'none'; // Hide admin page modal
+    userProfileModal.style.display = 'none'; 
+    adminPageModal.style.display = 'none'; 
     resetCodeMessage.textContent = '';
     resetCodeForm.reset();
 }
@@ -380,8 +363,8 @@ function showNewPasswordForm() {
     newPasswordModal.style.display = 'flex';
     resetCodeModal.style.display = 'none';
     loginModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // Hide user profile modal
-    adminPageModal.style.display = 'none'; // Hide admin page modal
+    userProfileModal.style.display = 'none'; 
+    adminPageModal.style.display = 'none'; 
     newPasswordMessage.textContent = '';
     newPasswordForm.reset();
 }
@@ -401,15 +384,14 @@ function showUserProfileModal() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    adminPageModal.style.display = 'none'; // Hide admin page modal
-    userProfileModal.style.display = 'flex'; // Show user profile modal
+    adminPageModal.style.display = 'none'; 
+    userProfileModal.style.display = 'flex'; 
 
-    pastChallengesContainer.style.display = 'none'; // Hide past challenges by default
-    pastChallengesList.innerHTML = ''; // Clear previous list
+    pastChallengesContainer.style.display = 'none'; 
+    pastChallengesList.innerHTML = ''; 
 }
 
 function showAdminPage() {
-    // Check if the user has admin role before showing the page
     if (!loggedInUser || loggedInUser.role !== 'A') {
         alert("Acesso negado. Esta página é apenas para administradores.");
         return;
@@ -420,9 +402,9 @@ function showAdminPage() {
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
     userProfileModal.style.display = 'none';
-    adminPageModal.style.display = 'flex'; // Show admin page modal
-    createChallengeMessage.textContent = ''; // Clear any previous messages
-    createChallengeForm.reset(); // Reset form fields
+    adminPageModal.style.display = 'flex'; 
+    createChallengeMessage.textContent = ''; 
+    createChallengeForm.reset(); 
 }
 
 
@@ -432,11 +414,10 @@ function closeModal() {
     forgotPasswordModal.style.display = 'none';
     resetCodeModal.style.display = 'none';
     newPasswordModal.style.display = 'none';
-    userProfileModal.style.display = 'none'; // Hide user profile modal
-    adminPageModal.style.display = 'none'; // Hide admin page modal
+    userProfileModal.style.display = 'none'; 
+    adminPageModal.style.display = 'none'; 
 }
 
-// --- Listeners de submissão de formulários ---
 loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const identifier = document.getElementById('loginIdentifier').value;
@@ -472,7 +453,6 @@ newPasswordForm.addEventListener('submit', (e) => {
     resetPassword(newPassword, confirmNewPassword);
 });
 
-// Novo: Listener para o formulário de criação de desafio
 createChallengeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const imageUrlsInput = document.getElementById('challengeImageUrls').value;
@@ -509,7 +489,6 @@ createChallengeForm.addEventListener('submit', async (e) => {
         displayMessage("Erro ao conectar com o servidor. Tente novamente mais tarde.", "error", createChallengeMessage);
     }
 });
-// --- Lógica de Jogo (Imagens e Botões) ---
 
 async function fetchDailyChallenge() {
     try {
@@ -539,15 +518,14 @@ function renderChallenge(challenge) {
     imagemElement.src = challenge.frames[lastFrameIndex];
 
     remainingGuessesElement.textContent = `Tentativas restantes: ${challenge.remainingGuesses}`;
-
-    if (challenge.isCompleted) {
+    if (challenge.isCompleted || challenge.remainingGuesses === 0) {
         displayMessage(`O desafio terminou! Resposta: ${challenge.challengeAnswer}`, "info");
         inputJogo.disabled = true;
-        document.querySelector('.game button').disabled = true;
+        sendButton.disabled = true;
     } else {
         displayMessage('', 'info');
         inputJogo.disabled = false;
-        document.querySelector('.game button').disabled = false;
+        sendButton.disabled = false;
     }
 
     renderFrameButtons(challenge.frames.length);
@@ -555,7 +533,6 @@ function renderChallenge(challenge) {
 }
 
 
-// Function to fetch a challenge by date (placeholder for now)
 async function fetchChallengeByDate(date) {
     try {
         const response = await fetch(`${API_BASE_URL}/challenge/by-date/${date}`, {
@@ -574,8 +551,6 @@ async function fetchChallengeByDate(date) {
 }
 
 
-// ... (código anterior) ...
-
 async function submitGuess() {
     console.log("[IMAGEM LOG] Início de submitGuess.");
     const guess = inputJogo.value.trim();
@@ -584,8 +559,6 @@ async function submitGuess() {
         return;
     }
 
-    // Certifica-se de que currentChallenge está definido e possui um ID.
-    // Esta validação é crucial agora que esperamos o ID.
     if (!currentChallenge || currentChallenge.id === undefined || currentChallenge.id === null) {
         displayMessage("Erro: Desafio não carregado corretamente (ID ausente). Tente recarregar a página.", "error");
         console.error("currentChallenge.id é undefined ou null. Objeto currentChallenge:", currentChallenge);
@@ -604,7 +577,7 @@ async function submitGuess() {
             headers: requestHeaders,
             body: JSON.stringify({
                 guess: guess,
-                challengeId: currentChallenge.id // <--- Esta linha já havia sido sugerida.
+                challengeId: currentChallenge.id 
             })
         });
 
@@ -623,7 +596,6 @@ async function submitGuess() {
         const result = await response.json();
         console.log("[IMAGEM LOG] Resultado da tentativa (result):", result);
 
-        // Atualiza os frames com os enviados do backend
         currentChallenge.frames = result.frames;
         console.log("[IMAGEM LOG] currentChallenge.frames atualizado:", currentChallenge.frames);
 
@@ -655,7 +627,6 @@ async function submitGuess() {
         renderFrameButtons(currentChallenge.frames.length);
         inputJogo.value = '';
 
-        // Atualizar pontuação do usuário no perfil, se aplicável
         if (loggedInUser && result.user && result.user.score !== undefined) {
             loggedInUser.score = result.user.score;
             profileScoreElement.textContent = loggedInUser.score;
@@ -685,7 +656,6 @@ function handleInputChange() {
     const input = inputJogo.value.toLowerCase();
     suggestionsDatalist.innerHTML = '';
 
-    // Supondo que currentChallenge.suggestions seja uma lista de palavras para sugerir
     if (currentChallenge && currentChallenge.suggestions) {
         currentChallenge.suggestions.forEach(suggestion => {
             if (suggestion.toLowerCase().startsWith(input) && input.length > 0) {
@@ -743,7 +713,7 @@ async function fetchWeeklyRanking() {
         rankingListElement.innerHTML = '';
 
         ranking.forEach((user, index) => {
-            const li = document.createElement('li'); // Correção de lli para li
+            const li = document.createElement('li'); 
             li.textContent = `${index + 1}. ${user.nickname} - Pontos: ${user.points}`;
             rankingListElement.appendChild(li);
         });
@@ -757,19 +727,16 @@ function logout() {
     location.reload();
 }
 
-// Função para exibir mensagens
 function displayMessage(text, type = 'info', container = mensagem) {
     container.textContent = text;
-    container.className = type; // Pode ser 'info', 'error', 'success' para estilização
+    container.className = type; 
 }
 
-// New: Function to show past challenges
 async function showPastChallenges() {
-    pastChallengesContainer.style.display = 'block'; // Show the container
-    pastChallengesList.innerHTML = '<li>Carregando desafios anteriores...</li>'; // Loading message
+    pastChallengesContainer.style.display = 'block'; 
+    pastChallengesList.innerHTML = '<li>Carregando desafios anteriores...</li>'; 
 
     try {
-        // Placeholder: This endpoint needs to be implemented in the backend
         const response = await fetch(`${API_BASE_URL}/challenge/history`, {
             headers: getHeadersForRoute(`${API_BASE_URL}/challenge/history`)
         });
@@ -779,19 +746,18 @@ async function showPastChallenges() {
         }
 
         const pastChallenges = await response.json();
-        pastChallengesList.innerHTML = ''; // Clear loading message
+        pastChallengesList.innerHTML = ''; 
 
         if (pastChallenges.length === 0) {
             pastChallengesList.innerHTML = '<li>Nenhum desafio anterior encontrado.</li>';
             return;
         }
 
-        // Display challenges for the last 7 days
         const today = new Date();
         for (let i = 0; i < 7; i++) {
             const date = new Date(today);
             date.setDate(today.getDate() - i);
-            const formattedDate = date.toISOString().split('T')[0]; //YYYY-MM-DD
+            const formattedDate = date.toISOString().split('T')[0]; 
 
             const challengeForDay = pastChallenges.find(pc => pc.date === formattedDate);
 
@@ -802,16 +768,16 @@ async function showPastChallenges() {
 
         if (challengeForDay) {
             const statusSpan = document.createElement('span');
-            const completedSuccessfully = challengeForDay.isCompleted; // true se acertou
-            const allGuessesUsed = challengeForDay.remainingGuesses === 0; // true se usou todas as 5 tentativas
+            const completedSuccessfully = challengeForDay.isCompleted; 
+            const allGuessesUsed = challengeForDay.remainingGuesses === 0; 
 
             if (completedSuccessfully) {
-                statusSpan.textContent = `Status: Concluído (Resposta: ${challengeForDay.challengeAnswer ?? '---'})`;
+                statusSpan.textContent = `Status: Concluído: Você Acertou!`;
                 statusSpan.style.color = 'lightgreen';
-            } else if (allGuessesUsed) { // Se não acertou E usou todas as tentativas
-                statusSpan.textContent = 'Status: Desafio Concluído: Você Errou'; // <--- NOVO STATUS
-                statusSpan.style.color = 'salmon'; // Uma cor para indicar "errou"
-            } else { // Se não acertou E ainda tem tentativas
+            } else if (allGuessesUsed) { 
+                statusSpan.textContent = 'Status: Desafio Concluído: Você Errou'; 
+                statusSpan.style.color = 'salmon'; 
+            } else {
                 statusSpan.textContent = 'Status: Não Concluído';
                 statusSpan.style.color = 'orange';
             }
