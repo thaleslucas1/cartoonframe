@@ -74,7 +74,7 @@ public class ChallengeService {
         int remainingGuesses = 5 - totalGuesses;
 
         ChallengeDTO dto = new ChallengeDTO();
-        dto.id = challenge.getId(); // <--- ADD THIS LINE
+        dto.id = challenge.getId();
         dto.date = challenge.getDate();
         dto.frames = challenge.getFrames().subList(0, frameCountToShow);
         dto.remainingGuesses = remainingGuesses;
@@ -126,7 +126,7 @@ public class ChallengeService {
         int remainingGuesses = 5 - totalGuesses;
 
         ChallengeDTO dto = new ChallengeDTO();
-        dto.id = challenge.getId(); // <--- ADD THIS LINE
+        dto.id = challenge.getId();
         dto.date = challenge.getDate();
         dto.frames = challenge.getFrames().subList(0, frameCountToShow);
         dto.remainingGuesses = remainingGuesses;
@@ -263,10 +263,9 @@ public class ChallengeService {
         return challenges.stream().map(challenge -> {
             ChallengeDTO dto = new ChallengeDTO();
 
-            dto.id = challenge.getId(); // <--- ADD THIS LINE
+            dto.id = challenge.getId();
             dto.date = challenge.getDate();
-            dto.frames = challenge.getFrames();
-            dto.challengeAnswer = challenge.getChallengeAnswer();
+
 
             var userGuesses = challenge.getGuesses().stream()
                     .filter(g -> g.getUser() != null && g.getUser().getId().equals(user.getId()))
