@@ -1,7 +1,7 @@
 package com.cartoonframe.app.controller;
 
+import com.cartoonframe.app.dto.ChallengeDTO;
 import com.cartoonframe.app.dto.CreateChallengeDTO;
-import com.cartoonframe.app.model.Challenge;
 import com.cartoonframe.app.service.AdminChallengeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +20,8 @@ public class AdminChallengeController {
     }
 
     @PostMapping
-    public ResponseEntity<Challenge> create(@RequestBody CreateChallengeDTO dto) {
-        Challenge created = adminChallengeService.createChallenge(dto);
+    public ResponseEntity<ChallengeDTO> create(@RequestBody CreateChallengeDTO dto) {
+        ChallengeDTO created = adminChallengeService.createChallenge(dto);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 }

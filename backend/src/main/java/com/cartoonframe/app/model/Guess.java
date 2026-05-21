@@ -7,8 +7,6 @@ import java.time.LocalDateTime;
 @Entity
 public class Guess {
 
-    //atributos
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -33,19 +31,8 @@ public class Guess {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    //construtores
-
     public Guess() {
     }
-
-    public Guess(Challenge challenge, boolean isCorrect, int guessOrder, String playerGuess) {
-        this.challenge = challenge;
-        this.isCorrect = isCorrect;
-        this.guessOrder = guessOrder;
-        this.playerGuess = playerGuess;
-    }
-
-    //getters
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
@@ -78,8 +65,6 @@ public class Guess {
     public String getSessionId() {
         return sessionId;
     }
-
-    //setters
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;

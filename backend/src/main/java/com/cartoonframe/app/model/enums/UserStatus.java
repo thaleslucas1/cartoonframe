@@ -5,33 +5,19 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum UserStatus {
 
-    ACTIVE ("A", "Active"),
-    INACTIVE ("I", "Inactive"),
-    PENDING ("P", "Pending");
+    ACTIVE ("A"),
+    INACTIVE ("I"),
+    PENDING ("P");
 
     private String code;
-    private String description;
 
-    private UserStatus(String code, String description) {
+    private UserStatus(String code) {
         this.code = code;
-        this.description = description;
     }
 
     @JsonValue
     public String getCode() {
         return code;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     @JsonCreator

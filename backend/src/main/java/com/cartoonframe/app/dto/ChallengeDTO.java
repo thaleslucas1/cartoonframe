@@ -3,11 +3,10 @@ package com.cartoonframe.app.dto;
 import java.time.LocalDate;
 import java.util.List;
 
-public class ChallengeDTO {
-    public Long id;
-    public LocalDate date;
-    public List<String> frames;
-    public int remainingGuesses;
-    public boolean isCompleted;
-    public String challengeAnswer;
-}
+public record ChallengeDTO(
+        Long id,
+        LocalDate date,
+        List<String> frames,
+        int remainingGuesses,
+        boolean isCompleted
+) {}

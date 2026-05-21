@@ -4,62 +4,42 @@ import com.cartoonframe.app.dto.LoginRequestDTO;
 import com.cartoonframe.app.dto.RegisterRequestDTO;
 import com.cartoonframe.app.dto.ResponseDTO;
 import com.cartoonframe.app.dto.UserSummaryDTO;
+import com.cartoonframe.app.model.User;
 import com.cartoonframe.app.service.AuthService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
 
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDTO dto) {
-        try {
-            ResponseDTO response = authService.login(dto);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+    public ResponseEntity<ResponseDTO> login(@RequestBody LoginRequestDTO dto) {
+        return ResponseEntity.ok(authService.login(dto));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequestDTO dto) {
-        try {
-            UserSummaryDTO user = authService.register(dto);
-            return ResponseEntity.ok(user);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+    public ResponseEntity<UserSummaryDTO> register(@RequestBody RegisterRequestDTO dto) {
+        return ResponseEntity.ok(authService.register(dto));
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<?> profile(@RequestHeader("Authorization") String authHeader) {
-        try {
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(401).body(Map.of("message", "Token ausente ou mal formatado"));
-            }
-            String token = authHeader.substring(7);
-            UserSummaryDTO profile = authService.getProfile(token);
-            return ResponseEntity.ok(profile);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(401).body(Map.of("message", e.getMessage()));
-        }
+    public ResponseEntity<UserSummaryDTO> profile(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(authService.getProfile(user));
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<?> verifyEmail(@RequestParam UUID uuid) {
-        try {
-            authService.verifyEmail(uuid);
-            return ResponseEntity.ok(Map.of("message", "Conta verificada com sucesso!"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+    public ResponseEntity<Void> verifyEmail(@RequestParam UUID uuid) {
+        authService.verifyEmail(uuid);
+        return ResponseEntity.ok().build();
     }
 }

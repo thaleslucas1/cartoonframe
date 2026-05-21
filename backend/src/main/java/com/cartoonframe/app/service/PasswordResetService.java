@@ -4,26 +4,40 @@ import com.cartoonframe.app.model.PasswordResetToken;
 import com.cartoonframe.app.model.User;
 import com.cartoonframe.app.repository.PasswordResetTokenRepository;
 import com.cartoonframe.app.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.Random;
+import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class PasswordResetService {
+
     private final PasswordResetTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final SecureRandom secureRandom = new SecureRandom();
+
+    public PasswordResetService(
+            PasswordResetTokenRepository tokenRepository,
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            EmailService emailService
+    ) {
+        this.tokenRepository = tokenRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+    }
 
     public void sendResetCode(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Email não encontrado"));
+        userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Email não encontrado"));
 
-        String code = String.format("%06d", new Random().nextInt(999999));
+        String code = String.format("%06d", secureRandom.nextInt(999999));
+
         PasswordResetToken token = new PasswordResetToken();
         token.setEmail(email);
         token.setCode(code);
@@ -31,32 +45,38 @@ public class PasswordResetService {
         token.setUsed(false);
         tokenRepository.save(token);
 
-        emailService.sendEmailText(email, "Código para Redefinição de Senha",
-                "Seu código de redefinição é: " + code);
+        emailService.sendEmailText(
+                email,
+                "Código para Redefinição de Senha",
+                "Seu código de redefinição é: " + code
+        );
     }
 
     public void confirmCode(String email, String code) {
         PasswordResetToken token = tokenRepository
                 .findByEmailAndCodeAndUsedFalse(email, code)
-                .orElseThrow(() -> new RuntimeException("Código inválido ou expirado"));
+                .orElseThrow(() -> new IllegalArgumentException("Código inválido ou expirado"));
 
         if (token.getExpirationTime().isBefore(Instant.now())) {
-            throw new RuntimeException("Código expirado");
+            throw new IllegalStateException("Código expirado");
         }
     }
 
     public void resetPassword(String email, String newPassword) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Email não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Email não encontrado"));
+
+        tokenRepository.findByEmailAndUsedFalse(email).stream()
+                .filter(t -> t.getExpirationTime().isAfter(Instant.now()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Nenhum código válido confirmado para este email"));
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        tokenRepository.findAll().stream()
-                .filter(t -> t.getEmail().equals(email) && !t.isUsed())
-                .forEach(t -> {
-                    t.setUsed(true);
-                    tokenRepository.save(t);
-                });
+        List<PasswordResetToken> tokens = tokenRepository.findByEmailAndUsedFalse(email).stream()
+                .peek(t -> t.setUsed(true))
+                .toList();
+        tokenRepository.saveAll(tokens);
     }
 }

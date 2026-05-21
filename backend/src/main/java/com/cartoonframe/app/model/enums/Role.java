@@ -5,32 +5,18 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Role {
 
-    USER("U", "User"),
-    ADMIN("A", "Admin");
+    USER("U"),
+    ADMIN("A");
 
-    private String code;
-    private String description;
+    private final String code;
 
-    private Role(String code, String description) {
+    private Role(String code) {
         this.code = code;
-        this.description = description;
     }
 
     @JsonValue
     public String getCode() {
         return code;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     @JsonCreator

@@ -6,7 +6,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,38 +20,27 @@ import java.util.Collections;
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
 
-    @Autowired
-    TokenService tokenService;
+    private final Logger logger = LoggerFactory.getLogger(SecurityFilter.class);
 
-    @Autowired
-    UserRepository userRepository;
+    private final TokenService tokenService;
+
+    private final UserRepository userRepository;
+
+    public SecurityFilter(UserRepository userRepository, TokenService tokenService) {
+        this.tokenService = tokenService;
+        this.userRepository = userRepository;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-
         String uri = request.getRequestURI();
-        System.out.println("URI: " + uri);
-
-        if (uri.startsWith("/auth/login") ||
-                uri.startsWith("/auth/register") ||
-                uri.startsWith("/auth/verify") ||
-                uri.startsWith("/password-reset") ||
-                uri.startsWith("/test-send-mail") ||
-                uri.startsWith("/h2-console") ||
-                uri.startsWith("/v3/api-docs") ||
-                uri.startsWith("/swagger-ui") ||
-                uri.equals("/swagger-ui.html")) {
-            System.out.println("Pulando autenticação para rota pública: " + uri);
-            filterChain.doFilter(request, response);
-            return;
-        }
+        logger.debug("Requisição recebida: {}", uri);
 
         String authHeader = request.getHeader("Authorization");
-        System.out.println("Authorization header: " + authHeader);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("Sem token ou token mal formatado.");
+            logger.debug("Sem token para rota: {}", uri);
             filterChain.doFilter(request, response);
             return;
         }
@@ -59,26 +49,26 @@ public class SecurityFilter extends OncePerRequestFilter {
         String login;
         try {
             login = tokenService.validateToken(token);
-            System.out.println("Login extraído do token: " + login);
-
             if (login == null || login.isEmpty()) {
-                System.out.println("Token inválido ou expirado");
+                logger.warn("Token inválido ou expirado para rota: {}", uri);
                 filterChain.doFilter(request, response);
                 return;
             }
+            logger.debug("Token válido para usuário: {}", login);
         } catch (Exception e) {
-            System.out.println("Erro ao validar token: " + e.getMessage());
+            logger.error("Erro ao validar token: {}", e.getMessage());
             filterChain.doFilter(request, response);
             return;
         }
 
         User user = userRepository.findByEmail(login).orElse(null);
-        System.out.println("Usuário encontrado: " + (user != null ? user.getEmail() : "NÃO ENCONTRADO"));
-
         if (user != null) {
+            logger.debug("Usuário autenticado: {}", user.getEmail());
             var authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
             var authentication = new UsernamePasswordAuthenticationToken(user, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
+        } else {
+            logger.warn("Usuário não encontrado para o login: {}", login);
         }
 
         filterChain.doFilter(request, response);

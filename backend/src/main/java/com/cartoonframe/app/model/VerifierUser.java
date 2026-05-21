@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "VerifierUser")
 public class VerifierUser {
 
     @Id

@@ -12,7 +12,7 @@ import com.cartoonframe.app.model.enums.UserStatus;
 import com.cartoonframe.app.repository.UserRepository;
 import com.cartoonframe.app.repository.VerifierUserRepository;
 import com.cartoonframe.app.util.ValidationUtils;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,14 +22,24 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
-    private final VerifierUserRepository VerifierUserRepository;
+    private final VerifierUserRepository verifierUserRepository;
     private final EmailService emailService;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
+
+    public AuthService(UserRepository repository, PasswordEncoder passwordEncoder, TokenService tokenService, VerifierUserRepository verifierUserRepository, EmailService emailService) {
+        this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
+        this.tokenService = tokenService;
+        this.verifierUserRepository = verifierUserRepository;
+        this.emailService = emailService;
+    }
 
     public ResponseDTO login(LoginRequestDTO dto) {
         Optional<User> userOpt;
@@ -39,14 +49,14 @@ public class AuthService {
             userOpt = repository.findByNickname(dto.identifier());
         }
 
-        User user = userOpt.orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        User user = userOpt.orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
-            throw new RuntimeException("Senha incorreta");
+            throw new IllegalArgumentException("Senha incorreta");
         }
 
         if (user.getUserStatus() != UserStatus.ACTIVE) {
-            throw new RuntimeException("Email não verificado. Por favor, verifique seu email antes de fazer login.");
+            throw new IllegalStateException("Email não verificado. Por favor, verifique seu email antes de fazer login.");
         }
 
         String token = tokenService.generateToken(user);
@@ -54,16 +64,15 @@ public class AuthService {
     }
 
     public UserSummaryDTO register(RegisterRequestDTO dto) {
-
         ValidationUtils.validateEmail(dto.email());
         ValidationUtils.validatePassword(dto.password());
 
         if (repository.findByEmail(dto.email()).isPresent()) {
-            throw new RuntimeException("Email já cadastrado");
+            throw new IllegalArgumentException("Email já cadastrado");
         }
 
         if (repository.findByNickname(dto.nickname()).isPresent()) {
-            throw new RuntimeException("Nickname já está em uso");
+            throw new IllegalArgumentException("Nickname já está em uso");
         }
 
         User newUser = new User();
@@ -80,57 +89,34 @@ public class AuthService {
         verifierUser.setUser(newUser);
         verifierUser.setUuid(UUID.randomUUID());
         verifierUser.setExpirationDate(Instant.now().plusSeconds(86400));
-        VerifierUserRepository.save(verifierUser);
+        verifierUserRepository.save(verifierUser);
 
-        String link = "http://localhost:8080/auth/verify?uuid=" + verifierUser.getUuid();
+        String link = baseUrl + "/auth/verify?uuid=" + verifierUser.getUuid();
         emailService.sendEmailText(
                 newUser.getEmail(),
                 "Verificação de Conta - CartoonFrame",
                 "Olá " + newUser.getName() + ",\n\nClique no link abaixo para verificar sua conta:\n" + link
         );
 
-        UserSummaryDTO dtoSummary = new UserSummaryDTO();
-        dtoSummary.id = newUser.getId().toString();
-        dtoSummary.name = newUser.getName();
-        dtoSummary.email = newUser.getEmail();
-        dtoSummary.nickname = newUser.getNickname();
-        dtoSummary.score = newUser.getScore();
-
-        return dtoSummary;
+        return UserSummaryDTO.from(newUser);
     }
 
     public void verifyEmail(UUID uuid) {
-        VerifierUser verifier = VerifierUserRepository.findByUuid(uuid)
-                .orElseThrow(() -> new RuntimeException("UUID inválido"));
+        VerifierUser verifier = verifierUserRepository.findByUuid(uuid)
+                .orElseThrow(() -> new IllegalArgumentException("UUID inválido"));
 
         if (verifier.getExpirationDate().isBefore(Instant.now())) {
-            throw new RuntimeException("O link de verificação expirou");
+            throw new IllegalStateException("O link de verificação expirou");
         }
 
         User user = verifier.getUser();
         user.setUserStatus(UserStatus.ACTIVE);
         repository.save(user);
 
-        VerifierUserRepository.delete(verifier); //
+        verifierUserRepository.delete(verifier);
     }
 
-    public UserSummaryDTO getProfile(String token) {
-        String email = tokenService.validateToken(token);
-        if (email == null) {
-            throw new RuntimeException("Token inválido ou expirado");
-        }
-
-        User user = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
-        UserSummaryDTO dto = new UserSummaryDTO();
-        dto.id = user.getId().toString();
-        dto.name = user.getName();
-        dto.email = user.getEmail();
-        dto.nickname = user.getNickname();
-        dto.score = user.getScore();
-        dto.userStatus = user.getUserStatus();
-        dto.role = user.getRole();
-        return dto;
+    public UserSummaryDTO getProfile(User user) {
+        return UserSummaryDTO.from(user);
     }
 }

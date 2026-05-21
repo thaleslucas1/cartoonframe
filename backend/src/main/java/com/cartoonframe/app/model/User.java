@@ -12,8 +12,6 @@ import java.util.List;
 @Table(name = "\"user\"")
 public class User {
 
-    //atributos
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -46,12 +44,8 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Guess> guesses = new ArrayList<>();
 
-    //construtores
-
     public User() {
     }
-
-    //getters
 
     public Role getRole() {
         return role;
@@ -92,8 +86,6 @@ public class User {
     public UserStatus getUserStatus() {
         return userStatus;
     }
-
-    //setters
 
     public void setRole(Role role) {
         this.role = role;
