@@ -1,4 +1,4 @@
-# 📺 CartoonFrame
+# CartoonFrame
 
 ![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.0-brightgreen?style=flat-square&logo=springboot)
@@ -10,7 +10,7 @@ O **CartoonFrame** é um jogo diário de adivinhação focado na nostalgia dos d
 
 ---
 
-## ✨ Funcionalidades
+## Funcionalidades
 
 - **Desafio Diário:** Um novo desafio é gerado todos os dias. Os jogadores têm até 5 tentativas para adivinhar o desenho com base em frames progressivos.
 - **Jogabilidade Flexível:** Suporte para usuários logados (acumulando pontos no ranking) e jogadores anônimos (via controle de sessão no navegador).
@@ -21,7 +21,7 @@ O **CartoonFrame** é um jogo diário de adivinhação focado na nostalgia dos d
 
 ---
 
-## 🛠 Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 **Frontend:**
 - React 18
@@ -39,7 +39,7 @@ O **CartoonFrame** é um jogo diário de adivinhação focado na nostalgia dos d
 
 ---
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 cartoonframe/
@@ -77,7 +77,7 @@ cartoonframe/
 
 ---
 
-## 🚀 Como Executar o Projeto Localmente
+## Como Executar o Projeto Localmente
 
 ### Pré-requisitos
 
@@ -136,7 +136,7 @@ O frontend estará disponível em `http://localhost:5173`.
 
 ---
 
-## 🔐 Variáveis de Ambiente
+## Variáveis de Ambiente
 
 As variáveis de ambiente do backend ficam no arquivo `backend/.env`. Crie-o a partir do `backend/.env.example`.
 
@@ -154,7 +154,7 @@ As variáveis de ambiente do backend ficam no arquivo `backend/.env`. Crie-o a p
 
 ---
 
-## 🤝 Contribuindo
+## Contribuindo
 
 Contribuições são bem-vindas! Para contribuir:
 
@@ -166,6 +166,6 @@ Contribuições são bem-vindas! Para contribuir:
 
 ---
 
-## 📄 Licença
+## Licença
 
 Este projeto está licenciado sob a [MIT License](LICENSE).
